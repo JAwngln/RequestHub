@@ -1,0 +1,328 @@
+/* Auth System Styles - Original Design */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1c6b2f 0%, #0a2f16 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.research-title {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+    width: 90%;
+    max-width: 800px;
+}
+
+.research-title h1 {
+    font-size: clamp(11px, 2.8vw, 18px);
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.5;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('../ppss-logo.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(3px);
+    z-index: -1;
+}
+
+.background::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 50%, rgba(76, 175, 80, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(129, 199, 132, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 40% 80%, rgba(56, 142, 60, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(102, 187, 106, 0.2) 0%, transparent 40%);
+    z-index: 1;
+}
+
+.background::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(28, 107, 47, 0.95) 0%, rgba(10, 47, 22, 0.98) 100%);
+    z-index: 2;
+}
+
+.container {
+    position: relative;
+    width: 400px;
+    min-height: 480px;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 40px 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 3;
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.container-bg-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+    color: rgba(28, 107, 47, 0.08);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    transform: rotate(-15deg);
+}
+
+.container-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container .logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: #ffffff;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 0 auto 16px auto;
+    display: block;
+}
+
+.container h1 {
+    font-size: 32px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.input-group {
+    position: relative;
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+.input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-size: 18px;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 14px 14px 14px 45px;
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    font-size: 15px;
+    background: #fafafa;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: #1c6b2f;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(28, 107, 47, 0.1);
+}
+
+.input-group label {
+    position: absolute;
+    left: 15px;
+    top: -8px;
+    color: #1c6b2f;
+    font-size: 12px;
+    background: white;
+    padding: 0 5px;
+    z-index: 1;
+}
+
+.recover {
+    width: 100%;
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.recover a {
+    color: #1c6b2f;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.recover a:hover {
+    color: #0a2f16;
+}
+
+.btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #1c6b2f 0%, #0a2f16 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(28, 107, 47, 0.4);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.links {
+    text-align: center;
+    width: 100%;
+}
+
+.links p {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.links button {
+    background: none;
+    border: none;
+    color: #1c6b2f;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.links button:hover {
+    color: #0a2f16;
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .research-title {
+        top: 45px;
+        width: 95%;
+    }
+    
+    .container .logo {
+        width: 68px;
+        height: 68px;
+        padding: 6px;
+        margin: 0 auto 12px auto;
+        display: block;
+    }
+    
+    .research-title h1 {
+        font-size: clamp(11px, 2.8vw, 16px);
+        line-height: 1.4;
+    }
+    
+    .container {
+        width: 90%;
+        padding: 30px 25px;
+        min-height: 450px;
+    }
+    
+    .container-content {
+        padding: 0;
+    }
+    
+    .container h1 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .research-title {
+        top: 38px;
+        width: 95%;
+    }
+    
+    .container .logo {
+        width: 56px;
+        height: 56px;
+        padding: 5px;
+        margin: 0 auto 10px auto;
+        display: block;
+    }
+    
+    .research-title h1 {
+        font-size: clamp(10px, 2.6vw, 14px);
+        line-height: 1.4;
+    }
+    
+    .container {
+        width: 95%;
+        padding: 25px 20px;
+        min-height: 420px;
+    }
+    
+    .container-content {
+        padding: 0;
+    }
+    
+    .container h1 {
+        font-size: 24px;
+        margin-bottom: 25px;
+    }
+    
+    .input-group input,
+    .input-group select {
+        padding: 12px 12px 12px 40px;
+        font-size: 14px;
+    }
+    
+    .input-group i {
+        font-size: 16px;
+        left: 12px;
+    }
+    
+    .btn {
+        padding: 12px;
+        font-size: 15px;
+    }
+}

@@ -1,0 +1,664 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+
+}
+
+h2 {
+    text-align: center;
+}
+
+/* Vehicle Request Layout */
+.request-layout {
+    display: flex;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+.form-wrapper {
+    flex: 1;
+    max-width: 500px;
+}
+
+.request-list {
+    flex: 1;
+    max-width: 500px;
+    min-height: 200px;
+    border: 2px solid #ddd;
+    padding: 20px;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.request-list h2 {
+    margin-bottom: 20px;
+    color: #1c6b2f;
+    font-size: 20px;
+    border-bottom: 2px solid #1c6b2f;
+    padding-bottom: 8px;
+}
+
+.empty-message {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.request-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.request-item h4 {
+    margin: 0 0 10px 0;
+    color: #1c6b2f;
+    font-size: 16px;
+}
+
+.request-item p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.request-item .request-details {
+    margin-bottom: 10px;
+}
+
+.request-actions {
+    margin-top: 10px;
+    text-align: right;
+}
+
+.cancel-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.cancel-btn:hover {
+    background: #c82333;
+}
+
+.status-text-approved {
+    color: #28a745;
+    font-weight: 500;
+}
+
+
+/* ================= TOP BAR ================= */
+.topbar {
+    height: 60px;
+    background: #1c6b2f;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.top-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.top-left img {
+    width: 35px;
+}
+
+.top-right {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ================= LAYOUT ================= */
+.container {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+    width: 270px;
+    background: linear-gradient(#0e3f1e, #0a2f16);
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sidebar h2 {
+    margin-bottom: 15px;
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    min-height: 44px;
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.primary {
+    background: white;
+    color: #1c6b2f;
+}
+
+.secondary {
+    background: #1c6b2f;
+    color: white;
+    border: 1px solid white;
+}
+
+.logout {
+    margin-top: auto;
+    background: #8aa08f;
+    color: white;
+}
+
+.primary:hover,
+.secondary:hover {
+    background-color: white;
+    color: #1c6b2f;
+    border: 1px solid #1c6b2f;
+    transition: 0.3s;
+}
+
+/* ================= LINKS ================= */
+.links {
+    margin-top: 20px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.links a {
+    display: block;
+    color: yellow;
+    margin-top: 8px;
+    text-decoration: none;
+}
+
+/* ================= MAIN CONTENT ================= */
+.content {
+    flex: 1;
+    padding: 28px 32px;
+    background: #f5f5f5;
+    overflow-y: auto;
+}
+
+.content h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* ================= FORM CONTAINERS ================= */
+.form,
+.form-wrapper,
+.paper-form {
+    max-width: 1200px;
+    width: 100%;
+    margin: auto;
+}
+
+/* ================= FORM WRAPPER (DATE ANCHOR) ================= */
+.form-wrapper {
+    max-width: 950px;
+    margin: auto;
+    position: relative; /* important */
+}
+
+/* ================= PAPER FORM (NO WHITE BACKGROUND) ================= */
+.paper-form {
+    padding: 40px 20px;
+    font-size: 16px;
+}
+
+/* ================= FORM ROWS ================= */
+.row,
+.line-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+label,
+.line-row label {
+    width: 160px;
+    font-weight: bold;
+}
+
+/* ================= INPUTS ================= */
+input,
+textarea {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+}
+
+/* DATE FIX */
+input[type="date"] {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid black;
+    padding: 5px;
+    font-size: 16px;
+    color: black;
+}
+
+textarea {
+    height: 60px;
+    resize: none;
+}
+
+/* ================= PAPER-STYLE INPUTS ================= */
+.line-row input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid black;
+    padding: 5px;
+    font-size: 16px;
+}
+
+/* ================= DATE ROW ================= */
+.two-col {
+    display: flex;
+    justify-content: space-between;
+}
+
+.two-col .col {
+    display: flex;
+    align-items: center;
+    width: 48%;
+}
+
+.date-right {
+    justify-content: flex-end;
+}
+
+/* ================= TOP-RIGHT DATE ================= */
+.form-date {
+    position: absolute;
+    top: -15px;
+    right: 20px; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-date label {
+    font-weight: bold;
+}
+
+.form-date input {
+    border: none;
+    border-bottom: 1px solid black;
+    background: transparent;
+    outline: none;
+    padding: 5px;
+    font-size: 16px;
+}
+
+/* ================= APPROVAL SECTION ================= */
+.approval-section {
+    margin-top: 50px;
+}
+
+.approval-section label {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.request-approval {
+    align-items: center;
+}
+
+.approval-inline {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+    font-weight: bold;
+}
+
+.approval-inline label {
+    margin-bottom: 8px;
+}
+
+/* ================= DECLINE ================= */
+.decline-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.decline-input {
+    width: 260px;
+    border: none;
+    border-bottom: 1px solid black;
+    padding: 5px;
+    font-size: 16px;
+    background: transparent;
+    outline: none;
+}
+
+/* ================= NOTIFICATIONS ================= */
+.notif-box {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 40px;
+    width: 220px;
+    background: white;
+    color: black;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 100;
+}
+
+.bell {
+    font-size: 24px;
+    cursor: pointer;
+}
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.profile-pic {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid white;
+    margin-bottom: 8px;
+}
+
+.profile-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ================= EDIT PROFILE BUTTON ================= */
+.edit-profile-btn {
+    background: transparent;
+    color: white;
+    border: 1px solid white;
+    border-radius: 15px;
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.edit-profile-btn:hover {
+    background: white;
+    color: #1c6b2f;
+    transition: 0.3s;
+}
+
+/* ================= RESPONSIVE TABLE ================= */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.request-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    background: white;
+}
+
+.request-table th,
+.request-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.request-table th {
+    background: #1c6b2f;
+    color: white;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.request-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* ================= RESPONSIVE DESIGN ================= */
+@media (max-width: 1200px) {
+    .content {
+        padding: 26px 28px;
+    }
+    
+    .form-wrapper,
+    .request-list {
+        max-width: 450px;
+    }
+}
+
+@media (max-width: 992px) {
+    .content {
+        padding: 22px 22px;
+    }
+    
+    .sidebar {
+        width: 240px;
+    }
+    
+    .request-layout {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .form-wrapper,
+    .request-list {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .topbar {
+        padding: 0 15px;
+        height: 55px;
+    }
+    
+    .top-left img {
+    display: block;
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+    .top-left span {
+        font-size: 12px;
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .top-right span {
+        display: none;
+    }
+    
+    .top-right {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .bell {
+        font-size: 20px;
+        display: block !important;
+        color: white;
+    }
+    
+    .notif-box {
+        width: 260px;
+        right: -10px;
+    }
+    
+    .content {
+        padding: 20px 15px;
+    }
+    
+    .content h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    
+    .row,
+    .line-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    label,
+    .line-row label {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    input,
+    textarea {
+        width: 100%;
+    }
+    
+    .two-col {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .two-col .col {
+        width: 100%;
+    }
+    
+    .form-date {
+        position: static;
+        margin-bottom: 15px;
+    }
+    
+    .decline-input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .topbar {
+        height: 50px;
+        padding: 0 10px;
+    }
+    
+    .top-left img {
+    display: block;
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+}
+    
+    .top-left span {
+        font-size: 11px;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .bell {
+        font-size: 18px;
+    }
+    
+    .notif-box {
+        width: 240px;
+        right: -5px;
+        font-size: 13px;
+    }
+    
+    .content {
+        padding: 15px 10px;
+    }
+    
+    .content h1 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .btn {
+        padding: 12px;
+        font-size: 14px;
+    }
+    
+    .paper-form {
+        padding: 20px 15px;
+    }
+    
+    .request-item {
+        padding: 12px;
+    }
+    
+    .request-item h4 {
+        font-size: 14px;
+    }
+    
+    .request-item p {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    .top-left span {
+        display: none;
+    }
+    
+    .notif-box {
+        width: 220px;
+    }
+    
+    .content {
+        padding: 10px 8px;
+    }
+    
+    .sidebar h2 {
+        font-size: 16px;
+    }
+    
+    .btn {
+        padding: 10px;
+        font-size: 12px;
+    }
+}
+
