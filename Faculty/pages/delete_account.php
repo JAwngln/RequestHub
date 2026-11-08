@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../connect.php';
+require_once '../../activity_log.php';
 
 header('Content-Type: application/json');
 
@@ -18,13 +19,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
-            echo json_encode(['success' => false, 'message' => 'Account not found']);
-        } else {
+            // Record the deletion while the session still identifies the user.
+            log_activity($conn, 'account_deleted', 'Deleted their faculty account.');
+
             // Destroy session
             session_unset();
             session_destroy();
-            
+
             echo json_encode(['success' => true, 'message' => 'Account deleted successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Account not found']);
         }
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to delete account: ' . $stmt->error]);

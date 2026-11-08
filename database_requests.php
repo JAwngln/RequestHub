@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'connect.php';
+require_once __DIR__ . '/activity_log.php';
 
 // Clear any output buffers to prevent HTML mixing with JSON
 if (ob_get_length()) ob_clean();
@@ -28,7 +29,7 @@ class DatabaseRequestSystem {
             travel_date DATE NOT NULL,
             destination VARCHAR(255) NOT NULL,
             purpose TEXT NOT NULL,
-            passengers VARCHAR(50) NOT NULL,
+            passengers TEXT NOT NULL,
             driver VARCHAR(100) NULL DEFAULT NULL,
             requested_by VARCHAR(100) NOT NULL,
             request_date DATETIME NOT NULL,
@@ -117,6 +118,17 @@ class DatabaseRequestSystem {
             $this->conn->query("ALTER TABLE notifications ADD COLUMN recipient_email VARCHAR(255) NULL AFTER recipient_role");
         }
 
+        // Per-user dismissals let "Clear All" hide notifications for the person
+        // who cleared them without deleting rows other accounts still need.
+        $sqlDismissals = "CREATE TABLE IF NOT EXISTS notification_dismissals (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_email VARCHAR(255) NOT NULL,
+            notification_id INT NOT NULL,
+            dismissed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_user_notification (user_email, notification_id)
+        )";
+        $this->conn->query($sqlDismissals);
+
         // Create badge_seen table to track when user last viewed sections
         $sqlBadgeSeen = "CREATE TABLE IF NOT EXISTS badge_seen (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -188,15 +200,25 @@ class DatabaseRequestSystem {
             if ($userEmail === '') {
                 return ['notifications' => [], 'unread_count' => 0];
             }
-            $sql = "SELECT * FROM notifications
-                    WHERE recipient_email = ? OR recipient_role = 'all'
-                    ORDER BY created_at DESC LIMIT 10";
+            $sql = "SELECT n.* FROM notifications n
+                    WHERE (n.recipient_email = ? OR n.recipient_role = 'all')
+                      AND NOT EXISTS (
+                          SELECT 1 FROM notification_dismissals nd
+                          WHERE nd.notification_id = n.id AND nd.user_email = ?
+                      )
+                    ORDER BY n.created_at DESC LIMIT 10";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $userEmail);
+            $stmt->bind_param("ss", $userEmail, $userEmail);
         } else {
-            $sql = "SELECT * FROM notifications WHERE recipient_role = ? OR recipient_role = 'all' ORDER BY created_at DESC LIMIT 10";
+            $sql = "SELECT n.* FROM notifications n
+                    WHERE (n.recipient_role = ? OR n.recipient_role = 'all')
+                      AND NOT EXISTS (
+                          SELECT 1 FROM notification_dismissals nd
+                          WHERE nd.notification_id = n.id AND nd.user_email = ?
+                      )
+                    ORDER BY n.created_at DESC LIMIT 10";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $role);
+            $stmt->bind_param("ss", $role, $userEmail);
         }
         $stmt->execute();
         $result = $stmt->get_result();
@@ -204,6 +226,13 @@ class DatabaseRequestSystem {
         $notifications = [];
         while ($row = $result->fetch_assoc()) {
             $row['time_ago'] = $this->timeAgo($row['created_at']);
+            // Absolute timestamp with a timezone offset so the browser can
+            // recompute the relative time live without any timezone guessing.
+            try {
+                $row['created_at_iso'] = (new DateTime($row['created_at']))->format(DateTime::ATOM);
+            } catch (Throwable $e) {
+                $row['created_at_iso'] = $row['created_at'];
+            }
             // Expose the deep-link fields the dashboards use to route a click.
             // related_id is the database id of the vehicle/item request.
             $row['request_id'] = isset($row['related_id']) ? (int)$row['related_id'] : null;
@@ -227,14 +256,25 @@ class DatabaseRequestSystem {
             if ($userEmail === '') {
                 return 0;
             }
-            $sql = "SELECT COUNT(*) as count FROM notifications
-                    WHERE (recipient_email = ? OR recipient_role = 'all') AND is_read = FALSE";
+            $sql = "SELECT COUNT(*) as count FROM notifications n
+                    WHERE (n.recipient_email = ? OR n.recipient_role = 'all')
+                      AND n.is_read = FALSE
+                      AND NOT EXISTS (
+                          SELECT 1 FROM notification_dismissals nd
+                          WHERE nd.notification_id = n.id AND nd.user_email = ?
+                      )";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $userEmail);
+            $stmt->bind_param("ss", $userEmail, $userEmail);
         } else {
-            $sql = "SELECT COUNT(*) as count FROM notifications WHERE (recipient_role = ? OR recipient_role = 'all') AND is_read = FALSE";
+            $sql = "SELECT COUNT(*) as count FROM notifications n
+                    WHERE (n.recipient_role = ? OR n.recipient_role = 'all')
+                      AND n.is_read = FALSE
+                      AND NOT EXISTS (
+                          SELECT 1 FROM notification_dismissals nd
+                          WHERE nd.notification_id = n.id AND nd.user_email = ?
+                      )";
             $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $role);
+            $stmt->bind_param("ss", $role, $userEmail);
         }
         $stmt->execute();
         $result = $stmt->get_result();
@@ -320,31 +360,66 @@ class DatabaseRequestSystem {
         return $exists;
     }
     
-    // Clear all notifications for a specific role, filtered by recipient_email for faculty
+    // Clear all notifications for a specific role without deleting rows other
+    // accounts may still need. Each cleared notification is recorded in
+    // notification_dismissals for the current user, and list/count queries skip
+    // those rows so they stay gone after a refresh.
     public function clearAllNotifications($role) {
         $role = trim($_SESSION['role'] ?? '');
         if (!in_array($role, ['faculty', 'planning_officer'], true)) {
             return false;
         }
-        $userEmail = $_SESSION['email'] ?? '';
-        
-        if ($role === 'faculty') {
-            if ($userEmail === '') {
-                return false;
-            }
-            $sql = "UPDATE notifications SET is_read = TRUE, read_at = NOW()
-                    WHERE (recipient_email = ? OR recipient_role = 'all') AND is_read = FALSE";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $userEmail);
-        } else {
-            $sql = "UPDATE notifications SET is_read = TRUE, read_at = NOW() WHERE (recipient_role = ? OR recipient_role = 'all') AND is_read = FALSE";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bind_param("s", $role);
+        $userEmail = trim($_SESSION['email'] ?? '');
+        if ($userEmail === '') {
+            return false;
         }
-        $success = $stmt->execute();
-        $affectedRows = $stmt->affected_rows;
-        $stmt->close();
-        return $success && $affectedRows > 0;
+
+        if ($role === 'faculty') {
+            $selectSql = "SELECT id FROM notifications
+                          WHERE recipient_email = ? OR recipient_role = 'all'";
+            $selectStmt = $this->conn->prepare($selectSql);
+            $selectStmt->bind_param("s", $userEmail);
+        } else {
+            $selectSql = "SELECT id FROM notifications
+                          WHERE recipient_role = ? OR recipient_role = 'all'";
+            $selectStmt = $this->conn->prepare($selectSql);
+            $selectStmt->bind_param("s", $role);
+        }
+
+        if (!$selectStmt) {
+            return false;
+        }
+
+        $selectStmt->execute();
+        $result = $selectStmt->get_result();
+        $notificationIds = [];
+        while ($row = $result->fetch_assoc()) {
+            $notificationIds[] = (int)$row['id'];
+        }
+        $selectStmt->close();
+
+        // Nothing to clear is still a successful clear.
+        if (empty($notificationIds)) {
+            return true;
+        }
+
+        $dismissStmt = $this->conn->prepare(
+            "INSERT IGNORE INTO notification_dismissals (user_email, notification_id) VALUES (?, ?)"
+        );
+        if (!$dismissStmt) {
+            return false;
+        }
+
+        $success = true;
+        foreach ($notificationIds as $notificationId) {
+            $dismissStmt->bind_param("si", $userEmail, $notificationId);
+            if (!$dismissStmt->execute()) {
+                $success = false;
+            }
+        }
+        $dismissStmt->close();
+
+        return $success;
     }
     
     // ------------------------------------------------------------------
@@ -397,17 +472,22 @@ class DatabaseRequestSystem {
     /** Validate a license number and return an error message, or null when valid. */
     private function validateLicenseNumber(string $license): ?string
     {
-        $needle = $this->licenseNeedle($license);
-        if (strlen($needle) < 5 || strlen($needle) > 25) {
-            return 'License number must contain 5-25 letters and numbers.';
-        }
-        if (!preg_match('/[0-9]/', $needle)) {
-            return 'License number must include at least one digit.';
-        }
-        if (!preg_match('/^[A-Za-z0-9 .-]+$/', $license)) {
-            return 'License number contains characters that are not allowed. Use letters, numbers, spaces, periods, or hyphens.';
+        $normalized = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', trim($license)) ?? '');
+        // Standard Philippine driver's license: letter + 10 digits (N01-23-456789).
+        if (!preg_match('/^[A-Z]\d{10}$/', $normalized)) {
+            return 'License number must follow the format N01-23-456789 (a letter followed by 10 digits).';
         }
         return null;
+    }
+
+    /** Store a license number in the canonical N01-23-456789 layout. */
+    private function normalizeLicenseNumber(string $license): string
+    {
+        $normalized = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', trim($license)) ?? '');
+        if (preg_match('/^([A-Z])(\d{2})(\d{2})(\d{6})$/', $normalized, $m)) {
+            return $m[1] . $m[2] . '-' . $m[3] . '-' . $m[4];
+        }
+        return trim($license);
     }
 
     /** Validate an optional contact number and return an error message, or null. */
@@ -416,14 +496,21 @@ class DatabaseRequestSystem {
         if ($contact === '') {
             return null;
         }
-        if (!preg_match('/^[0-9+()\-\s.]+$/', $contact)) {
-            return 'Contact number may only contain digits, spaces, +, -, or parentheses.';
-        }
         $digits = preg_replace('/\D/', '', $contact) ?? '';
-        if (strlen($digits) < 7 || strlen($digits) > 15) {
-            return 'Contact number must contain between 7 and 15 digits.';
+        if (!preg_match('/^09\d{9}$/', $digits)) {
+            return 'Contact number must be an 11-digit mobile number starting with 09 (for example, 0917 000 0000).';
         }
         return null;
+    }
+
+    /** Store a mobile number in the 0917 000 0000 layout. */
+    private function normalizeContactNumber(string $contact): string
+    {
+        $digits = preg_replace('/\D/', '', trim($contact)) ?? '';
+        if (preg_match('/^09\d{9}$/', $digits)) {
+            return substr($digits, 0, 4) . ' ' . substr($digits, 4, 3) . ' ' . substr($digits, 7);
+        }
+        return trim($contact);
     }
 
     public function plateNumberExists($plate, $excludeId = 0)
@@ -538,6 +625,8 @@ class DatabaseRequestSystem {
         if ($contactError = $this->validateContactNumber($contact)) {
             return ['success' => false, 'error' => $contactError, 'field' => 'contact_number'];
         }
+        $license = $this->normalizeLicenseNumber($license);
+        $contact = $this->normalizeContactNumber($contact);
         if ($this->licenseNumberExists($license, $id)) {
             return ['success' => false, 'error' => 'That license number is already registered to another driver.', 'field' => 'license_number'];
         }
@@ -1668,6 +1757,7 @@ switch ($action) {
         if ($table === 'requested_items' || $table === 'vehicle_requests') {
             // Attachments are stored in the row's LONGBLOB column, so deleting the row
             // below releases the bytes too - there is no separate file to remove.
+            $cancelDescription = '';
 
             // Cancelling an item request releases the stock reserved at submission.
             if ($table === 'requested_items') {
@@ -1678,6 +1768,10 @@ switch ($action) {
                 $lookupRow = $lookupRes->fetch_assoc();
                 $lookup->close();
 
+                if ($lookupRow) {
+                    $cancelDescription = "Cancelled item request for {$lookupRow['quantity']} x {$lookupRow['items']}.";
+                }
+
                 if ($lookupRow && strtolower($lookupRow['action'] ?? '') !== 'declined') {
                     $restoreQty = (int)$lookupRow['quantity'];
                     $restoreItem = $lookupRow['items'];
@@ -1685,6 +1779,16 @@ switch ($action) {
                     $restoreStmt->bind_param("is", $restoreQty, $restoreItem);
                     $restoreStmt->execute();
                     $restoreStmt->close();
+                }
+            } elseif ($table === 'vehicle_requests') {
+                $lookup = $conn->prepare("SELECT destination, travel_date FROM vehicle_requests WHERE id = ?");
+                $lookup->bind_param("i", $requestId);
+                $lookup->execute();
+                $vehicleRow = $lookup->get_result()->fetch_assoc();
+                $lookup->close();
+
+                if ($vehicleRow) {
+                    $cancelDescription = "Cancelled vehicle request to {$vehicleRow['destination']} for {$vehicleRow['travel_date']}.";
                 }
             }
 
@@ -1701,6 +1805,19 @@ switch ($action) {
                 $del->bind_param("i", $requestId);
                 $del->execute();
                 $del->close();
+
+                // Record faculty cancellations only; officer-side changes are not
+                // part of the faculty activity log.
+                if ($affected > 0 && $cancelDescription !== ''
+                    && trim((string)($_SESSION['role'] ?? '')) === 'faculty') {
+                    log_activity(
+                        $conn,
+                        $table === 'requested_items' ? 'item_request_cancelled' : 'vehicle_request_cancelled',
+                        $cancelDescription,
+                        ['target_type' => $table, 'target_id' => (int)$requestId]
+                    );
+                }
+
                 echo json_encode(['success' => true, 'message' => 'Request cancelled and removed']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to cancel request']);

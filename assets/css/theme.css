@@ -1,0 +1,1428 @@
+/* ==========================================================================
+   PPSS Shared Theme
+   Light/dark design tokens plus dark overrides for dashboard + auth screens.
+   Theme is applied with data-theme="light|dark" on <html> by assets/js/theme.js.
+   ========================================================================== */
+
+:root {
+    color-scheme: light;
+
+    --ppss-bg: #f5f5f5;
+    --ppss-surface: #ffffff;
+    --ppss-surface-2: #f9fafb;
+    --ppss-surface-3: #f3f4f6;
+    --ppss-border: #e5e7eb;
+    --ppss-border-strong: #d1d5db;
+    --ppss-text: #1f2937;
+    --ppss-heading: #111827;
+    --ppss-muted: #6b7280;
+    --ppss-faint: #9ca3af;
+
+    --ppss-primary: #1e5e3a;
+    --ppss-primary-hover: #174a2e;
+    --ppss-primary-soft: #f0f7f3;
+    --ppss-on-primary: #ffffff;
+
+    --ppss-input-bg: #ffffff;
+    --ppss-input-border: #d1d5db;
+    --ppss-shadow: rgba(16, 24, 40, 0.06);
+
+    --ppss-success: #067647;
+    --ppss-success-soft: #ecfdf3;
+    --ppss-success-border: #abefc6;
+
+    --ppss-warning: #92400e;
+    --ppss-warning-soft: #fffbeb;
+    --ppss-warning-border: #fde68a;
+
+    --ppss-danger: #b42318;
+    --ppss-danger-soft: #fef3f2;
+    --ppss-danger-border: #fecdca;
+
+    --ppss-info: #1d4ed8;
+    --ppss-info-soft: #eff6ff;
+    --ppss-info-border: #bfdbfe;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --ppss-bg: #0b1220;
+    --ppss-surface: #111b2b;
+    --ppss-surface-2: #172436;
+    --ppss-surface-3: #1d2c41;
+    --ppss-border: #28384e;
+    --ppss-border-strong: #3a4d67;
+    --ppss-text: #e6edf5;
+    --ppss-heading: #f5f8fb;
+    --ppss-muted: #9fb0c4;
+    --ppss-faint: #7d8ea3;
+
+    --ppss-primary: #3fa56a;
+    --ppss-primary-hover: #4bb877;
+    --ppss-primary-soft: #12301f;
+    --ppss-on-primary: #ffffff;
+
+    --ppss-input-bg: #0e1826;
+    --ppss-input-border: #2e3f57;
+    --ppss-shadow: rgba(0, 0, 0, 0.35);
+
+    --ppss-success: #6ee7a0;
+    --ppss-success-soft: #0f2a1b;
+    --ppss-success-border: #1f5134;
+
+    --ppss-warning: #fbbf24;
+    --ppss-warning-soft: #3a2a10;
+    --ppss-warning-border: #5c4416;
+
+    --ppss-danger: #ff9b9b;
+    --ppss-danger-soft: #3a1717;
+    --ppss-danger-border: #5c2323;
+
+    --ppss-info: #93c5fd;
+    --ppss-info-soft: #142a44;
+    --ppss-info-border: #24486e;
+}
+
+/* ==========================================================================
+   Theme toggle
+   ========================================================================== */
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 13px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+.theme-toggle:active {
+    transform: scale(0.97);
+}
+
+.theme-toggle:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.theme-toggle .material-icons {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.theme-toggle-text {
+    white-space: nowrap;
+}
+
+/* Theme toggle floating on the auth screens */
+.auth-theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 60;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.38);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+html[data-theme="dark"] .auth-theme-toggle {
+    background: rgba(17, 27, 43, 0.82);
+    border-color: var(--ppss-border-strong);
+    color: var(--ppss-text);
+}
+
+@media (max-width: 768px) {
+    .topbar .theme-toggle {
+        min-height: 34px;
+        padding: 0 10px;
+    }
+
+    .topbar .theme-toggle .material-icons {
+        display: inline-block;
+        font-size: 22px;
+    }
+
+    .topbar .theme-toggle-text {
+        display: none;
+    }
+
+    .auth-theme-toggle {
+        top: 12px;
+        right: 12px;
+        padding: 0 10px;
+    }
+
+    .auth-theme-toggle .theme-toggle-text {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   Shell (topbar, sidebar, content)
+   ========================================================================== */
+
+html[data-theme="dark"] body {
+    background-color: var(--ppss-bg);
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] .topbar {
+    background: #123f26;
+    border-bottom: 1px solid #0b2b1a;
+}
+
+html[data-theme="dark"] .sidebar {
+    background: linear-gradient(#0a2916, #071f10);
+}
+
+html[data-theme="dark"] .content,
+html[data-theme="dark"] #mainContent {
+    background: var(--ppss-bg);
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] .content h1,
+html[data-theme="dark"] #mainContent h1,
+html[data-theme="dark"] #mainContent h2,
+html[data-theme="dark"] #mainContent h3,
+html[data-theme="dark"] #mainContent h4,
+html[data-theme="dark"] #mainContent h5,
+html[data-theme="dark"] #mainContent h6 {
+    color: var(--ppss-heading);
+}
+
+html[data-theme="dark"] #mainContent p,
+html[data-theme="dark"] #mainContent li,
+html[data-theme="dark"] #mainContent dt,
+html[data-theme="dark"] #mainContent dd,
+html[data-theme="dark"] #mainContent label {
+    color: var(--ppss-text);
+}
+
+/* Notification dropdown */
+html[data-theme="dark"] .notif-box {
+    background: var(--ppss-surface);
+    color: var(--ppss-text);
+    border-color: var(--ppss-border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .notification-item {
+    border-bottom-color: var(--ppss-border);
+}
+
+html[data-theme="dark"] .notification-item:hover {
+    background-color: var(--ppss-surface-2);
+}
+
+html[data-theme="dark"] .notification-item.new-notification {
+    background-color: #12283f;
+    border-left-color: #3b82f6;
+}
+
+html[data-theme="dark"] .notification-actions {
+    border-top-color: var(--ppss-border);
+}
+
+html[data-theme="dark"] .notification-content strong,
+html[data-theme="dark"] .notification-title {
+    color: var(--ppss-heading);
+}
+
+html[data-theme="dark"] .notification-content p,
+html[data-theme="dark"] .notification-message {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .notification-content small,
+html[data-theme="dark"] .notification-time {
+    color: var(--ppss-faint);
+}
+
+html[data-theme="dark"] .request-item.notification-highlight {
+    background-color: #10301f;
+    outline-color: var(--ppss-primary);
+}
+
+/* ==========================================================================
+   Common content surfaces
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .paper-form,
+html[data-theme="dark"] #mainContent .form-wrapper,
+html[data-theme="dark"] #mainContent .request-card,
+html[data-theme="dark"] #mainContent .settings-container,
+html[data-theme="dark"] #mainContent .settings-header,
+html[data-theme="dark"] #mainContent .settings-section,
+html[data-theme="dark"] #mainContent .account-settings,
+html[data-theme="dark"] #mainContent .section,
+html[data-theme="dark"] #mainContent .fleet-panel,
+html[data-theme="dark"] #mainContent .fleet-stat,
+html[data-theme="dark"] #mainContent .fleet-card,
+html[data-theme="dark"] #mainContent .fleet-roster,
+html[data-theme="dark"] #mainContent .chart-section,
+html[data-theme="dark"] #mainContent .stat-card,
+html[data-theme="dark"] #mainContent .top-list,
+html[data-theme="dark"] #mainContent .month-container,
+html[data-theme="dark"] #mainContent .event-card,
+html[data-theme="dark"] #mainContent .request-item,
+html[data-theme="dark"] #mainContent .request-list,
+html[data-theme="dark"] #mainContent .user-card,
+html[data-theme="dark"] #mainContent .table-container,
+html[data-theme="dark"] #mainContent .modal-content,
+html[data-theme="dark"] #mainContent .summary-modal-content,
+html[data-theme="dark"] #mainContent .attachment-modal-content,
+html[data-theme="dark"] #mainContent .fleet-dialog {
+    background: var(--ppss-surface) !important;
+    background-image: none !important;
+    color: var(--ppss-text);
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .form-section,
+html[data-theme="dark"] #mainContent .info-group,
+html[data-theme="dark"] #mainContent .fleet-assign-summary,
+html[data-theme="dark"] #mainContent .fleet-search,
+html[data-theme="dark"] #mainContent .fleet-select,
+html[data-theme="dark"] #mainContent .summary-table-wrap,
+html[data-theme="dark"] #mainContent .empty-message,
+html[data-theme="dark"] #mainContent .fleet-empty,
+html[data-theme="dark"] #mainContent .no-users,
+html[data-theme="dark"] #mainContent .chart-empty,
+html[data-theme="dark"] #mainContent .loading,
+html[data-theme="dark"] #mainContent .request-table thead,
+html[data-theme="dark"] #mainContent .summary-table .month-group td {
+    background: var(--ppss-surface-2) !important;
+    color: var(--ppss-text);
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .page-header,
+html[data-theme="dark"] #mainContent .page-header h1,
+html[data-theme="dark"] #mainContent .form-actions,
+html[data-theme="dark"] #mainContent .item-actions,
+html[data-theme="dark"] #mainContent .modal-header,
+html[data-theme="dark"] #mainContent .summary-modal-header,
+html[data-theme="dark"] #mainContent .summary-modal-footer,
+html[data-theme="dark"] #mainContent .attachment-modal-topbar,
+html[data-theme="dark"] #mainContent .calendar-header,
+html[data-theme="dark"] #mainContent .calendar-footer,
+html[data-theme="dark"] #mainContent .fleet-head,
+html[data-theme="dark"] #mainContent .fleet-dialog-head,
+html[data-theme="dark"] #mainContent .fleet-dialog-foot,
+html[data-theme="dark"] #mainContent .chart-section h2,
+html[data-theme="dark"] #mainContent .top-item {
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .detail-label,
+html[data-theme="dark"] #mainContent .page-subtitle,
+html[data-theme="dark"] #mainContent .filter-label,
+html[data-theme="dark"] #mainContent .form-group label,
+html[data-theme="dark"] #mainContent .form-field label,
+html[data-theme="dark"] #mainContent .line-row label,
+html[data-theme="dark"] #mainContent .fleet-field label,
+html[data-theme="dark"] #mainContent .fleet-stat-label,
+html[data-theme="dark"] #mainContent .fleet-meta dt,
+html[data-theme="dark"] #mainContent .fleet-roster-muted,
+html[data-theme="dark"] #mainContent .fleet-hint,
+html[data-theme="dark"] #mainContent .stat-label,
+html[data-theme="dark"] #mainContent .stat-breakdown-label,
+html[data-theme="dark"] #mainContent .summary-meta,
+html[data-theme="dark"] #mainContent .user-id,
+html[data-theme="dark"] #mainContent .info-group label,
+html[data-theme="dark"] #mainContent .calendar-year-label,
+html[data-theme="dark"] #mainContent .detail-row strong,
+html[data-theme="dark"] #mainContent .settings-account {
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .detail-value,
+html[data-theme="dark"] #mainContent .detail-row,
+html[data-theme="dark"] #mainContent .request-subject,
+html[data-theme="dark"] #mainContent .request-number,
+html[data-theme="dark"] #mainContent .request-item h4,
+html[data-theme="dark"] #mainContent .request-item strong,
+html[data-theme="dark"] #mainContent .request-header h4,
+html[data-theme="dark"] #mainContent .fleet-stat-value,
+html[data-theme="dark"] #mainContent .fleet-plate,
+html[data-theme="dark"] #mainContent .fleet-model,
+html[data-theme="dark"] #mainContent .fleet-meta dd,
+html[data-theme="dark"] #mainContent .fleet-head-title h1,
+html[data-theme="dark"] #mainContent .fleet-roster-name,
+html[data-theme="dark"] #mainContent .fleet-roster-row,
+html[data-theme="dark"] #mainContent .stat-value,
+html[data-theme="dark"] #mainContent .stat-value-large,
+html[data-theme="dark"] #mainContent .stat-breakdown-value,
+html[data-theme="dark"] #mainContent .top-item-name,
+html[data-theme="dark"] #mainContent .user-name,
+html[data-theme="dark"] #mainContent .user-detail-value,
+html[data-theme="dark"] #mainContent .user-detail label,
+html[data-theme="dark"] #mainContent .info-group p,
+html[data-theme="dark"] #mainContent .calendar-year-select,
+html[data-theme="dark"] #mainContent .month-title,
+html[data-theme="dark"] #mainContent .day-number,
+html[data-theme="dark"] #mainContent .event-title,
+html[data-theme="dark"] #mainContent .event-description,
+html[data-theme="dark"] #mainContent .event-date-time,
+html[data-theme="dark"] #mainContent .vertical-bar-value,
+html[data-theme="dark"] #mainContent .bar-value,
+html[data-theme="dark"] #mainContent .summary-empty {
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] #mainContent .detail-row strong,
+html[data-theme="dark"] #mainContent .request-item strong {
+    color: var(--ppss-heading) !important;
+}
+
+/* ==========================================================================
+   Forms and inputs
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="submit"]):not([type="button"]),
+html[data-theme="dark"] #mainContent select,
+html[data-theme="dark"] #mainContent textarea,
+html[data-theme="dark"] .auth-theme-scope input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] .auth-theme-scope select,
+html[data-theme="dark"] .auth-theme-scope textarea,
+html[data-theme="dark"] .fleet-dialog input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] .fleet-dialog select,
+html[data-theme="dark"] .fleet-dialog textarea {
+    background: var(--ppss-input-bg) !important;
+    color: var(--ppss-text) !important;
+    border-color: var(--ppss-input-border) !important;
+}
+
+html[data-theme="dark"] #mainContent input::placeholder,
+html[data-theme="dark"] #mainContent textarea::placeholder {
+    color: var(--ppss-faint);
+}
+
+html[data-theme="dark"] #mainContent input[type="date"],
+html[data-theme="dark"] #mainContent input[type="time"],
+html[data-theme="dark"] #mainContent input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+html[data-theme="dark"] #mainContent select option,
+html[data-theme="dark"] .fleet-dialog select option {
+    background: var(--ppss-surface);
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .search-input,
+html[data-theme="dark"] #mainContent .form-input,
+html[data-theme="dark"] #mainContent .line-input,
+html[data-theme="dark"] #mainContent .reason-input,
+html[data-theme="dark"] #mainContent .time-select,
+html[data-theme="dark"] #mainContent .summary-month-select,
+html[data-theme="dark"] #mainContent .calendar-year-select {
+    background: var(--ppss-input-bg) !important;
+    color: var(--ppss-text) !important;
+    border-color: var(--ppss-input-border) !important;
+}
+
+/* ==========================================================================
+   Buttons, tabs, filters
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .filter-btn-ghost,
+html[data-theme="dark"] #mainContent .vr-summary-btn,
+html[data-theme="dark"] #mainContent .settings-btn-ghost,
+html[data-theme="dark"] #mainContent .fleet-btn-ghost,
+html[data-theme="dark"] #mainContent .fleet-action-quiet,
+html[data-theme="dark"] #mainContent .item-action-btn.delete,
+html[data-theme="dark"] #mainContent .action-btn,
+html[data-theme="dark"] #mainContent .view-btn,
+html[data-theme="dark"] #mainContent .btn.secondary,
+html[data-theme="dark"] #mainContent .po-modal-cancel,
+html[data-theme="dark"] #mainContent .fac-modal-cancel,
+html[data-theme="dark"] #mainContent .po-modal-cancel:hover,
+html[data-theme="dark"] #mainContent .fac-modal-cancel:hover {
+    background: var(--ppss-surface-2) !important;
+    color: var(--ppss-text) !important;
+    border-color: var(--ppss-input-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .filter-btn-ghost:hover,
+html[data-theme="dark"] #mainContent .vr-summary-btn:hover,
+html[data-theme="dark"] #mainContent .settings-btn-ghost:hover,
+html[data-theme="dark"] #mainContent .fleet-btn-ghost:hover,
+html[data-theme="dark"] #mainContent .fleet-action-quiet:hover,
+html[data-theme="dark"] #mainContent .item-action-btn.delete:hover,
+html[data-theme="dark"] #mainContent .action-btn:hover,
+html[data-theme="dark"] #mainContent .view-btn:hover,
+html[data-theme="dark"] #mainContent .btn.secondary:hover {
+    background: var(--ppss-surface-3) !important;
+    border-color: var(--ppss-border-strong) !important;
+}
+
+html[data-theme="dark"] #mainContent .vr-tabs {
+    background: var(--ppss-surface-2);
+    border-color: var(--ppss-border);
+}
+
+html[data-theme="dark"] #mainContent .vr-tab {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] #mainContent .vr-tab:hover {
+    background: var(--ppss-surface-3);
+    color: var(--ppss-heading);
+}
+
+html[data-theme="dark"] #mainContent .vr-tab.active {
+    background: var(--ppss-surface);
+    color: var(--ppss-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] #mainContent .filter-btn-primary,
+html[data-theme="dark"] #mainContent .item-action-btn.edit,
+html[data-theme="dark"] #mainContent .settings-btn-primary,
+html[data-theme="dark"] #mainContent .fleet-btn-primary,
+html[data-theme="dark"] #mainContent .fleet-action-primary,
+html[data-theme="dark"] #mainContent .btn.primary,
+html[data-theme="dark"] #mainContent .submit-btn,
+html[data-theme="dark"] #mainContent .summary-download-btn {
+    background: var(--ppss-primary) !important;
+    border-color: var(--ppss-primary) !important;
+    color: var(--ppss-on-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .filter-btn-primary:hover,
+html[data-theme="dark"] #mainContent .item-action-btn.edit:hover,
+html[data-theme="dark"] #mainContent .settings-btn-primary:hover,
+html[data-theme="dark"] #mainContent .fleet-btn-primary:hover,
+html[data-theme="dark"] #mainContent .fleet-action-primary:hover,
+html[data-theme="dark"] #mainContent .btn.primary:hover,
+html[data-theme="dark"] #mainContent .submit-btn:hover,
+html[data-theme="dark"] #mainContent .summary-download-btn:hover {
+    background: var(--ppss-primary-hover) !important;
+    border-color: var(--ppss-primary-hover) !important;
+}
+
+html[data-theme="dark"] #mainContent .filter-btn-primary .material-icons,
+html[data-theme="dark"] #mainContent .item-action-btn.edit,
+html[data-theme="dark"] #mainContent .settings-btn-primary,
+html[data-theme="dark"] #mainContent .fleet-btn-primary,
+html[data-theme="dark"] #mainContent .btn.primary,
+html[data-theme="dark"] #mainContent .submit-btn,
+html[data-theme="dark"] #mainContent .summary-download-btn {
+    color: var(--ppss-on-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .item-action-btn.delete,
+html[data-theme="dark"] #mainContent .delete-btn,
+html[data-theme="dark"] #mainContent .settings-btn-danger,
+html[data-theme="dark"] #mainContent .fleet-btn-danger,
+html[data-theme="dark"] #mainContent .fleet-action-danger,
+html[data-theme="dark"] #mainContent .cancel-btn {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+    color: var(--ppss-danger) !important;
+}
+
+html[data-theme="dark"] #mainContent .item-action-btn.delete:hover,
+html[data-theme="dark"] #mainContent .delete-btn:hover,
+html[data-theme="dark"] #mainContent .settings-btn-danger:hover,
+html[data-theme="dark"] #mainContent .fleet-btn-danger:hover,
+html[data-theme="dark"] #mainContent .fleet-action-danger:hover,
+html[data-theme="dark"] #mainContent .cancel-btn:hover {
+    background: #4a1d1d !important;
+    border-color: #7a2e2e !important;
+    color: #ffc2c2 !important;
+}
+
+html[data-theme="dark"] #mainContent .close-btn,
+html[data-theme="dark"] #mainContent .close,
+html[data-theme="dark"] #mainContent .attachment-modal-close {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] #mainContent .close-btn:hover,
+html[data-theme="dark"] #mainContent .close:hover,
+html[data-theme="dark"] #mainContent .attachment-modal-close:hover {
+    color: var(--ppss-heading);
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .request-table,
+html[data-theme="dark"] #mainContent .summary-table {
+    background: var(--ppss-surface);
+    color: var(--ppss-text);
+    border-color: var(--ppss-border);
+}
+
+html[data-theme="dark"] #mainContent .request-table th,
+html[data-theme="dark"] #mainContent .request-table td,
+html[data-theme="dark"] #mainContent .summary-table th,
+html[data-theme="dark"] #mainContent .summary-table td {
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .request-table th,
+html[data-theme="dark"] #mainContent .summary-table th {
+    background: var(--ppss-surface-2) !important;
+    color: var(--ppss-heading) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-table tbody tr:hover,
+html[data-theme="dark"] #mainContent .request-table tbody tr:hover td {
+    background: var(--ppss-surface-2) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-table td::before {
+    color: var(--ppss-muted);
+}
+
+/* ==========================================================================
+   Status badges
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .status-badge.normal-stock,
+html[data-theme="dark"] #mainContent .faculty-stock-badge.in,
+html[data-theme="dark"] #mainContent .fleet-status-available,
+html[data-theme="dark"] #mainContent .priority-low,
+html[data-theme="dark"] #mainContent .status-approved,
+html[data-theme="dark"] #mainContent .status-badge.approved {
+    background: var(--ppss-success-soft) !important;
+    border-color: var(--ppss-success-border) !important;
+    color: var(--ppss-success) !important;
+}
+
+html[data-theme="dark"] #mainContent .status-badge.low-stock,
+html[data-theme="dark"] #mainContent .faculty-stock-badge.low,
+html[data-theme="dark"] #mainContent .fleet-status-maintenance,
+html[data-theme="dark"] #mainContent .priority-medium,
+html[data-theme="dark"] #mainContent .status-pending,
+html[data-theme="dark"] #mainContent .status-badge.pending {
+    background: var(--ppss-warning-soft) !important;
+    border-color: var(--ppss-warning-border) !important;
+    color: var(--ppss-warning) !important;
+}
+
+html[data-theme="dark"] #mainContent .status-badge.out-stock,
+html[data-theme="dark"] #mainContent .faculty-stock-badge.out,
+html[data-theme="dark"] #mainContent .fleet-status-retired,
+html[data-theme="dark"] #mainContent .priority-high,
+html[data-theme="dark"] #mainContent .status-declined,
+html[data-theme="dark"] #mainContent .status-cancelled,
+html[data-theme="dark"] #mainContent .status-badge.declined {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+    color: var(--ppss-danger) !important;
+}
+
+html[data-theme="dark"] #mainContent .status-badge.role-faculty,
+html[data-theme="dark"] #mainContent .role-badge.role-faculty {
+    background: var(--ppss-info-soft) !important;
+    border-color: var(--ppss-info-border) !important;
+    color: var(--ppss-info) !important;
+}
+
+html[data-theme="dark"] #mainContent .status-badge.role-planning_officer,
+html[data-theme="dark"] #mainContent .role-badge.role-planning_officer {
+    background: var(--ppss-success-soft) !important;
+    border-color: var(--ppss-success-border) !important;
+    color: var(--ppss-success) !important;
+}
+
+html[data-theme="dark"] #mainContent .status-badge.role-admin,
+html[data-theme="dark"] #mainContent .role-badge.role-admin {
+    background: #2a1f45 !important;
+    border-color: #44336b !important;
+    color: #c4b5fd !important;
+}
+
+html[data-theme="dark"] #mainContent .fleet-pill-active {
+    background: var(--ppss-success-soft);
+    border-color: var(--ppss-success-border);
+    color: var(--ppss-success);
+}
+
+html[data-theme="dark"] #mainContent .fleet-pill-inactive {
+    background: var(--ppss-surface-3);
+    border-color: var(--ppss-border);
+    color: var(--ppss-muted);
+}
+
+/* ==========================================================================
+   Calendar
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .calendar-container .paper-form {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-header,
+html[data-theme="dark"] #mainContent .calendar-footer {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day-header {
+    background: var(--ppss-surface-2) !important;
+    color: var(--ppss-muted) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .calendar-day:hover {
+    background: var(--ppss-surface-2) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day.other-month,
+html[data-theme="dark"] #mainContent .mini-day.other-month {
+    background: var(--ppss-surface-2) !important;
+    color: var(--ppss-faint) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day.other-month .day-number {
+    color: var(--ppss-faint) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day.today {
+    background: var(--ppss-primary-soft) !important;
+    border-color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day.today .day-number {
+    color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .event-item {
+    background: var(--ppss-primary-soft) !important;
+    color: var(--ppss-primary) !important;
+    border-left-color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .event-item.calendar-event-item {
+    background: var(--ppss-info-soft) !important;
+    color: var(--ppss-info) !important;
+    border-left-color: var(--ppss-info) !important;
+}
+
+html[data-theme="dark"] #mainContent .event-item.more-indicator {
+    background: var(--ppss-surface-3) !important;
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .year-grid,
+html[data-theme="dark"] #mainContent .mini-calendar {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .mini-day {
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .mini-day:hover {
+    background: var(--ppss-surface-2);
+}
+
+html[data-theme="dark"] #mainContent .mini-day.today {
+    background: var(--ppss-primary-soft);
+    border-color: var(--ppss-primary);
+    color: var(--ppss-primary);
+}
+
+html[data-theme="dark"] #mainContent .month-container,
+html[data-theme="dark"] #mainContent .event-card {
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .events-section,
+html[data-theme="dark"] #mainContent .legend {
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] #mainContent .events-header h3,
+html[data-theme="dark"] #mainContent .event-title {
+    color: var(--ppss-heading) !important;
+}
+
+/* ==========================================================================
+   Analytics
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .stat-circle {
+    background: var(--ppss-primary) !important;
+    color: var(--ppss-on-primary);
+}
+
+html[data-theme="dark"] #mainContent .stat-circle .stat-value {
+    color: var(--ppss-on-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .stat-total-badge {
+    background: var(--ppss-surface-3);
+    border-color: var(--ppss-border);
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .bar-track,
+html[data-theme="dark"] #mainContent .vertical-bar-container {
+    background: var(--ppss-surface-3) !important;
+}
+
+html[data-theme="dark"] #mainContent .bar-fill,
+html[data-theme="dark"] #mainContent .vertical-bar-fill {
+    background: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .bar-label,
+html[data-theme="dark"] #mainContent .vertical-bar-label {
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .top-list h4,
+html[data-theme="dark"] #mainContent .chart-section h2 {
+    color: var(--ppss-heading) !important;
+}
+
+html[data-theme="dark"] #mainContent .top-item {
+    border-bottom-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .top-item-count {
+    background: var(--ppss-success-soft) !important;
+    border-color: var(--ppss-success-border) !important;
+    color: var(--ppss-success) !important;
+}
+
+html[data-theme="dark"] #mainContent .chart-empty {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border-strong) !important;
+    color: var(--ppss-muted) !important;
+}
+
+/* ==========================================================================
+   Fleet
+   ========================================================================== */
+
+html[data-theme="dark"] .fleet-page {
+    --fleet-green: #3fa56a;
+    --fleet-green-dark: #4bb877;
+    --fleet-border: #28384e;
+    --fleet-muted: #9fb0c4;
+    --fleet-text: #e6edf5;
+    color: var(--fleet-text);
+}
+
+html[data-theme="dark"] .fleet-page .fleet-panel {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .fleet-page .fleet-stat,
+html[data-theme="dark"] .fleet-page .fleet-card,
+html[data-theme="dark"] .fleet-page .fleet-roster {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-search,
+html[data-theme="dark"] .fleet-page .fleet-select {
+    background: var(--ppss-input-bg) !important;
+    border-color: var(--ppss-input-border) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-search input,
+html[data-theme="dark"] .fleet-page .fleet-select select,
+html[data-theme="dark"] .fleet-page .fleet-field select {
+    background: transparent !important;
+    color: var(--ppss-text) !important;
+    border-color: var(--ppss-input-border) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-search .material-icons,
+html[data-theme="dark"] .fleet-page .fleet-select .material-icons {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .fleet-page .fleet-dialog {
+    background: var(--ppss-surface) !important;
+    color: var(--ppss-text);
+    border: 1px solid var(--ppss-border);
+}
+
+html[data-theme="dark"] .fleet-page .fleet-dialog-head,
+html[data-theme="dark"] .fleet-page .fleet-dialog-foot,
+html[data-theme="dark"] .fleet-page .fleet-meta,
+html[data-theme="dark"] .fleet-page .fleet-card-actions,
+html[data-theme="dark"] .fleet-page .fleet-roster-list {
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-hint,
+html[data-theme="dark"] .fleet-page .fleet-unassigned,
+html[data-theme="dark"] .fleet-page .fleet-driver-note,
+html[data-theme="dark"] .fleet-page .fleet-result-count {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .fleet-page .fleet-empty {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .fleet-page .fleet-btn-ghost,
+html[data-theme="dark"] .fleet-page .fleet-action-quiet {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-input-border) !important;
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-btn-primary,
+html[data-theme="dark"] .fleet-page .fleet-action-primary {
+    background: var(--ppss-primary) !important;
+    border-color: var(--ppss-primary) !important;
+    color: var(--ppss-on-primary) !important;
+}
+
+/* ==========================================================================
+   Account settings (Planning Officer + Faculty)
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .settings-account,
+html[data-theme="dark"] #mainContent .settings-header,
+html[data-theme="dark"] #mainContent .settings-section,
+html[data-theme="dark"] #mainContent .account-settings {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .info-group {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .delete-section {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .message.success {
+    background: var(--ppss-success-soft);
+    border-color: var(--ppss-success-border);
+    color: var(--ppss-success);
+}
+
+html[data-theme="dark"] #mainContent .message.error {
+    background: var(--ppss-danger-soft);
+    border-color: var(--ppss-danger-border);
+    color: var(--ppss-danger);
+}
+
+/* ==========================================================================
+   Faculty request + vehicle forms
+   ========================================================================== */
+
+html[data-theme="dark"] #mainContent .request-layout .form-wrapper {
+    background: var(--ppss-surface) !important;
+    border-right-color: var(--ppss-border) !important;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] #mainContent .request-card,
+html[data-theme="dark"] #mainContent .paper-form {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-list {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent #requestListContainer {
+    background: var(--ppss-surface) !important;
+}
+
+html[data-theme="dark"] #mainContent #requestListContainer::-webkit-scrollbar-track {
+    background: var(--ppss-surface-3);
+}
+
+html[data-theme="dark"] #mainContent .request-item {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] #mainContent .request-item:hover {
+    border-color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-item h4,
+html[data-theme="dark"] #mainContent .request-item strong {
+    color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-item p {
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-item .request-details {
+    background: var(--ppss-surface-2) !important;
+    border-left-color: var(--ppss-primary);
+}
+
+html[data-theme="dark"] #mainContent .empty-message {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border-strong) !important;
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .form-field input[type="date"] {
+    color-scheme: dark;
+}
+
+/* ==========================================================================
+   Custom alert modals
+   ========================================================================== */
+
+html[data-theme="dark"] .po-modal-card,
+html[data-theme="dark"] .fac-modal-card {
+    background: var(--ppss-surface) !important;
+    color: var(--ppss-text);
+    border: 1px solid var(--ppss-border);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .po-modal-title,
+html[data-theme="dark"] .fac-modal-title {
+    color: var(--ppss-heading);
+}
+
+html[data-theme="dark"] .po-modal-message,
+html[data-theme="dark"] .fac-modal-message {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .po-modal-input {
+    background: var(--ppss-input-bg);
+    color: var(--ppss-text);
+    border-color: var(--ppss-input-border);
+}
+
+html[data-theme="dark"] .po-modal-cancel,
+html[data-theme="dark"] .fac-modal-cancel {
+    background: var(--ppss-surface-2);
+    color: var(--ppss-text);
+    border-color: var(--ppss-input-border);
+}
+
+html[data-theme="dark"] .po-modal-cancel:hover,
+html[data-theme="dark"] .fac-modal-cancel:hover {
+    background: var(--ppss-surface-3);
+}
+
+html[data-theme="dark"] .po-modal-card[data-type="success"],
+html[data-theme="dark"] .fac-modal-card[data-type="success"],
+html[data-theme="dark"] .po-modal-card[data-type="confirm"],
+html[data-theme="dark"] .fac-modal-card[data-type="confirm"] {
+    --po-accent: #3fa56a;
+    --po-accent-soft: #12301f;
+    --fac-accent: #3fa56a;
+    --fac-accent-soft: #12301f;
+}
+
+html[data-theme="dark"] .po-modal-card[data-type="error"],
+html[data-theme="dark"] .fac-modal-card[data-type="error"],
+html[data-theme="dark"] .po-modal-card[data-type="danger"],
+html[data-theme="dark"] .fac-modal-card[data-type="danger"],
+html[data-theme="dark"] .po-modal-card[data-type="warning"],
+html[data-theme="dark"] .fac-modal-card[data-type="warning"],
+html[data-theme="dark"] .po-modal-card[data-type="info"],
+html[data-theme="dark"] .fac-modal-card[data-type="info"] {
+    --po-accent-soft: #1b2a41;
+    --fac-accent-soft: #1b2a41;
+}
+
+html[data-theme="dark"] .po-modal-card[data-type="error"],
+html[data-theme="dark"] .fac-modal-card[data-type="error"],
+html[data-theme="dark"] .po-modal-card[data-type="danger"],
+html[data-theme="dark"] .fac-modal-card[data-type="danger"] {
+    --po-accent: #ff9b9b;
+    --fac-accent: #ff9b9b;
+}
+
+html[data-theme="dark"] .po-modal-card[data-type="warning"],
+html[data-theme="dark"] .fac-modal-card[data-type="warning"] {
+    --po-accent: #fbbf24;
+    --fac-accent: #fbbf24;
+}
+
+html[data-theme="dark"] .po-modal-card[data-type="info"],
+html[data-theme="dark"] .fac-modal-card[data-type="info"] {
+    --po-accent: #93c5fd;
+    --fac-accent: #93c5fd;
+}
+
+/* ==========================================================================
+   Auth screens
+   ========================================================================== */
+
+/* The auth selectors are scoped to .auth-theme-scope because the dashboard
+   shell also uses a generic .container element. */
+html[data-theme="dark"] .auth-theme-scope .container,
+html[data-theme="dark"] .auth-theme-scope .container-content {
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] .auth-theme-scope .container {
+    background: rgba(17, 27, 43, 0.98);
+    border: 1px solid var(--ppss-border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .auth-theme-scope .background::after {
+    background: linear-gradient(135deg, rgba(7, 24, 14, 0.94) 0%, rgba(4, 12, 7, 0.98) 100%);
+}
+
+html[data-theme="dark"] .auth-theme-scope .container-bg-text {
+    color: rgba(63, 165, 106, 0.1);
+}
+
+html[data-theme="dark"] .auth-theme-scope .container .logo {
+    background: var(--ppss-surface-2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .auth-theme-scope .container h1 {
+    color: var(--ppss-heading);
+}
+
+html[data-theme="dark"] .auth-theme-scope .input-group i {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .auth-theme-scope .input-group input,
+html[data-theme="dark"] .auth-theme-scope .input-group select {
+    background: var(--ppss-input-bg);
+    color: var(--ppss-text);
+    border-color: var(--ppss-input-border);
+}
+
+html[data-theme="dark"] .auth-theme-scope .input-group input:focus,
+html[data-theme="dark"] .auth-theme-scope .input-group select:focus {
+    background: var(--ppss-surface-2);
+    border-color: var(--ppss-primary);
+    box-shadow: 0 0 0 3px rgba(63, 165, 106, 0.2);
+}
+
+html[data-theme="dark"] .auth-theme-scope .input-group label {
+    background: var(--ppss-surface);
+    color: var(--ppss-primary);
+}
+
+html[data-theme="dark"] .auth-theme-scope .links p {
+    color: var(--ppss-muted);
+}
+
+html[data-theme="dark"] .auth-theme-scope .links button,
+html[data-theme="dark"] .auth-theme-scope .recover a {
+    color: var(--ppss-primary);
+}
+
+html[data-theme="dark"] .auth-theme-scope .links button:hover,
+html[data-theme="dark"] .auth-theme-scope .recover a:hover {
+    color: var(--ppss-primary-hover);
+}
+
+html[data-theme="dark"] .auth-theme-scope .research-title h1 {
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   Page-specific panels and controls
+   ========================================================================== */
+
+/* Requested items / vehicle requested legacy filter panels */
+html[data-theme="dark"] #mainContent .time-filter-section,
+html[data-theme="dark"] #mainContent .filter-section,
+html[data-theme="dark"] #mainContent .analytics-year-filter,
+html[data-theme="dark"] #mainContent .vertical-bar-chart {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .analytics-year-filter label,
+html[data-theme="dark"] #mainContent .summary-month-label,
+html[data-theme="dark"] #mainContent .faculty-stock-qty {
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .analytics-year-filter select {
+    background: var(--ppss-input-bg) !important;
+    color: var(--ppss-text) !important;
+    border-color: var(--ppss-input-border) !important;
+}
+
+/* Request / decision panels */
+html[data-theme="dark"] #mainContent .decision-section {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text);
+}
+
+html[data-theme="dark"] #mainContent .radio-option {
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] #mainContent .request-item-name,
+html[data-theme="dark"] #mainContent .request-header h3,
+html[data-theme="dark"] #mainContent .request-header h4 {
+    color: var(--ppss-heading) !important;
+}
+
+/* User accounts */
+html[data-theme="dark"] #mainContent .user-count {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-input-border) !important;
+    color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .user-avatar {
+    background: var(--ppss-primary-soft) !important;
+    color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .user-password {
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] #mainContent .user-password .material-icons {
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .user-actions {
+    border-top-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .user-detail-value {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] #mainContent .user-detail-value.password {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+    color: var(--ppss-danger) !important;
+}
+
+html[data-theme="dark"] #mainContent .no-users,
+html[data-theme="dark"] #mainContent .error-message {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border-strong) !important;
+    color: var(--ppss-muted) !important;
+}
+
+html[data-theme="dark"] #mainContent .error-message {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+    color: var(--ppss-danger) !important;
+}
+
+html[data-theme="dark"] #mainContent .loading-spinner {
+    border-color: var(--ppss-surface-3) !important;
+    border-top-color: var(--ppss-primary) !important;
+}
+
+/* Summary modal + attachment viewer */
+html[data-theme="dark"] #mainContent .summary-month-picker,
+html[data-theme="dark"] #mainContent .summary-filters,
+html[data-theme="dark"] #mainContent .summary-modal-body {
+    background: transparent;
+}
+
+html[data-theme="dark"] #mainContent .summary-table tr:nth-child(even) td {
+    background: var(--ppss-surface-2) !important;
+}
+
+html[data-theme="dark"] #mainContent .summary-table .month-group td {
+    background: var(--ppss-surface-3) !important;
+    color: var(--ppss-heading) !important;
+}
+
+html[data-theme="dark"] #mainContent .attachment-modal-content,
+html[data-theme="dark"] #mainContent .attachment-modal.show-fullscreen .attachment-modal-content {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .attachment-modal .modal-filename {
+    color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .decline-reason {
+    background: var(--ppss-danger-soft) !important;
+    border-left-color: var(--ppss-danger) !important;
+    color: var(--ppss-danger) !important;
+}
+
+/* Calendar additions */
+html[data-theme="dark"] #mainContent .calendar-container .btn {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-input-border) !important;
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-container .btn:hover {
+    background: var(--ppss-surface-3) !important;
+    border-color: var(--ppss-border-strong) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-container .btn.primary,
+html[data-theme="dark"] #mainContent .calendar-container .btn.success {
+    background: var(--ppss-primary) !important;
+    border-color: var(--ppss-primary) !important;
+    color: var(--ppss-on-primary) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-container .btn.danger {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+    color: var(--ppss-danger) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-day.has-events,
+html[data-theme="dark"] #mainContent .mini-day.has-events {
+    background: var(--ppss-surface-3) !important;
+}
+
+html[data-theme="dark"] #mainContent .mini-day-header {
+    background: var(--ppss-surface-2) !important;
+    color: var(--ppss-muted) !important;
+    border-color: var(--ppss-border) !important;
+}
+
+html[data-theme="dark"] #mainContent .calendar-year-select:hover,
+html[data-theme="dark"] #mainContent .clickable-month:hover {
+    background: var(--ppss-surface-2) !important;
+}
+
+html[data-theme="dark"] #mainContent .modal-title,
+html[data-theme="dark"] #mainContent .empty-state {
+    color: var(--ppss-heading) !important;
+}
+
+/* Fleet additions */
+html[data-theme="dark"] .fleet-page .fleet-dialog-foot {
+    background: var(--ppss-surface-2) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-action-warn {
+    background: var(--ppss-warning-soft) !important;
+    border-color: var(--ppss-warning-border) !important;
+    color: var(--ppss-warning) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-action-ok {
+    background: var(--ppss-success-soft) !important;
+    border-color: var(--ppss-success-border) !important;
+    color: var(--ppss-success) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-action-primary:hover {
+    background: var(--ppss-primary-hover) !important;
+    border-color: var(--ppss-primary-hover) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-pill,
+html[data-theme="dark"] .fleet-page .fleet-driver-modes span {
+    background: var(--ppss-surface-2) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-driver-modes input:checked + span {
+    background: var(--ppss-primary-soft) !important;
+    border-color: var(--ppss-primary) !important;
+    color: var(--ppss-primary) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-roster > summary:hover,
+html[data-theme="dark"] .fleet-page .fleet-icon-btn:hover {
+    background: var(--ppss-surface-2) !important;
+}
+
+html[data-theme="dark"] .fleet-page .fleet-form-error {
+    background: var(--ppss-danger-soft) !important;
+    border-color: var(--ppss-danger-border) !important;
+    color: var(--ppss-danger) !important;
+}
+
+/* Standalone redirect/notice cards */
+html[data-theme="dark"] .redirect-note {
+    background: var(--ppss-surface) !important;
+    border-color: var(--ppss-border) !important;
+    color: var(--ppss-text) !important;
+}
+
+/* ==========================================================================
+   Print: keep printable documents light
+   ========================================================================== */
+
+@media print {
+    html[data-theme="dark"] body,
+    html[data-theme="dark"] .content,
+    html[data-theme="dark"] #mainContent,
+    html[data-theme="dark"] .paper-form,
+    html[data-theme="dark"] .a4-page {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    html[data-theme="dark"] .a4-page,
+    html[data-theme="dark"] .a4-page * {
+        color: #000000 !important;
+        border-color: #000000 !important;
+    }
+}

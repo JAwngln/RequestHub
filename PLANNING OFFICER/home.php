@@ -13,6 +13,9 @@ if (!isset($_SESSION['email']) || trim($_SESSION['role']) !== 'planning_officer'
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planning Officer Dashboard</title>
     <link rel="stylesheet" href="home.css?v=2">
+    <link rel="stylesheet" href="/Prototype/assets/css/theme.css">
+    <link rel="stylesheet" href="/Prototype/assets/css/form-validation.css">
+    <script src="/Prototype/assets/js/theme.js"></script>
     <style>
         /* Live Notification Styles */
         .top-right .notification-badge {
@@ -594,6 +597,11 @@ if (!isset($_SESSION['email']) || trim($_SESSION['role']) !== 'planning_officer'
         <span>PHYSICAL PLANT AND SECURITY SERVICE</span>
     </div>
     <div class="top-right" onclick="toggleNotif()">
+        <button type="button" class="theme-toggle" onclick="event.stopPropagation(); toggleTheme();"
+                aria-label="Switch to dark mode" title="Switch to dark mode">
+            <span class="material-icons theme-toggle-icon">dark_mode</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
         <span>NOTIFICATIONS</span>  
         <span class="material-icons bell">notifications</span>
 
@@ -673,6 +681,14 @@ if (!isset($_SESSION['email']) || trim($_SESSION['role']) !== 'planning_officer'
             </div>
 
             <div class="nav-item">
+                <button type="button" class="nav-link" data-page="pages/activity_logs.php"
+                        onclick="loadPage('pages/activity_logs.php')">
+                    <span class="material-icons nav-icon">history</span>
+                    <span class="nav-text">Activity Logs</span>
+                </button>
+            </div>
+
+            <div class="nav-item">
                 <button type="button" class="nav-link" data-page="pages/account_settings.php"
                         onclick="loadPage('pages/account_settings.php')">
                     <span class="material-icons nav-icon">settings</span>
@@ -707,6 +723,7 @@ if (!isset($_SESSION['email']) || trim($_SESSION['role']) !== 'planning_officer'
 
 <?php include __DIR__ . '/includes/custom_alert_modal.php'; ?>
 
+<script src="/Prototype/assets/js/form-validation.js"></script>
 <script src="simple_dashboard_home.js"></script>
 <script src="pages/planningofficer_script.js"></script>
 <script src="../auth/auto-logout.js"></script>
@@ -785,6 +802,22 @@ function loadPage(page) {
                     scripts.forEach(script => {
                         if (!script.src) { // Only execute inline scripts
                             console.log("Executing user accounts script");
+                            const newScript = document.createElement('script');
+                            newScript.textContent = script.textContent;
+                            document.body.appendChild(newScript);
+                        }
+                    });
+                }, 100);
+            }
+
+            // Execute scripts if loading activity_logs.php
+            if (page.includes('activity_logs.php')) {
+                // Wait a bit for DOM to be ready
+                setTimeout(() => {
+                    // Execute ALL inline scripts from loaded content
+                    const scripts = document.getElementById("mainContent").querySelectorAll('script');
+                    scripts.forEach(script => {
+                        if (!script.src) { // Only execute inline scripts
                             const newScript = document.createElement('script');
                             newScript.textContent = script.textContent;
                             document.body.appendChild(newScript);
@@ -940,7 +973,8 @@ async function loadNotifications() {
                 title.textContent = notification.title || '';
                 const time = document.createElement('span');
                 time.className = 'notification-time';
-                time.textContent = notification.time_ago || '';
+                time.dataset.createdAt = notification.created_at_iso || notification.created_at || '';
+                time.textContent = formatNotificationTime(time.dataset.createdAt);
                 header.append(title, time);
                 const message = document.createElement('div');
                 message.className = 'notification-message';
@@ -990,7 +1024,9 @@ async function loadNotifications() {
 
 // Format notification time
 function formatNotificationTime(dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
     const now = new Date();
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
@@ -999,6 +1035,13 @@ function formatNotificationTime(dateString) {
     if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hour${Math.floor(diffMins / 60) > 1 ? 's' : ''} ago`;
     return date.toLocaleDateString();
+}
+
+// Keep the "x ago" labels current without waiting for the next poll.
+function refreshNotificationTimes() {
+    document.querySelectorAll('#notificationList .notification-time[data-created-at]').forEach(el => {
+        el.textContent = formatNotificationTime(el.dataset.createdAt);
+    });
 }
 
 // Route a notification to the page that owns the referenced record.
@@ -1162,11 +1205,23 @@ async function clearAllNotifications() {
         
         if (result.success) {
             // Clear the notification list
-            document.getElementById('notificationList').innerHTML = '<p>No new notifications</p>';
+            const notificationList = document.getElementById('notificationList');
+            if (notificationList) {
+                notificationList.innerHTML = '<p>No new notifications</p>';
+            }
             // Hide the badge
-            document.getElementById('notificationBadge').style.display = 'none';
-            // Reset last check time
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+            // Reset local counters
+            notificationCount = 0;
             lastNotificationCheck = Date.now();
+            // Close the notification dropdown after clearing
+            const notifBox = document.getElementById('notifBox');
+            if (notifBox) {
+                notifBox.style.display = 'none';
+            }
         } else {
             console.error('Failed to clear notifications:', result.error);
         }
@@ -1190,8 +1245,10 @@ function startNotificationPolling() {
     // Load notifications immediately
     loadNotifications();
     
-    // Then poll every 15 seconds for faster updates
-    setInterval(loadNotifications, 15000);
+    // Poll often so new notifications arrive close to realtime
+    setInterval(loadNotifications, 5000);
+    // Keep the "x ago" labels accurate between polls
+    setInterval(refreshNotificationTimes, 10000);
 }
 
 // Hamburger menu functions

@@ -15,7 +15,7 @@ $createTableSQL = "CREATE TABLE IF NOT EXISTS vehicle_requests (
     travel_date DATE NOT NULL,
     destination VARCHAR(255) NOT NULL,
     purpose TEXT NOT NULL,
-    passengers VARCHAR(50) NOT NULL,
+    passengers TEXT NOT NULL,
     requested_by VARCHAR(100) NOT NULL,
     request_date DATETIME NOT NULL,
     status ENUM('pending', 'approved', 'declined') DEFAULT 'pending',

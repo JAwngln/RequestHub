@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../connect.php';
+require_once '../../activity_log.php';
 
 header('Content-Type: application/json');
 
@@ -52,6 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['firstName'] = $firstName;
         $_SESSION['lastName'] = $lastName;
         $_SESSION['email'] = $email;
+
+        if ($affectedRows > 0) {
+            $description = $email !== $currentEmail
+                ? "Updated account details and changed email from {$currentEmail} to {$email}."
+                : 'Updated account details.';
+            log_activity($conn, 'account_updated', $description);
+        }
         
         echo json_encode([
             'success' => true,

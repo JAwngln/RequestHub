@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../connect.php';
+require_once __DIR__ . '/../activity_log.php';
 
 /* ================================
    REGISTER USER
@@ -29,11 +30,11 @@ if (isset($_POST['signUp'])) {
         document.addEventListener('DOMContentLoaded', function() {
             var back = function(){ window.history.back(); };
             if (typeof showAppAlert === 'function') {
-                showAppAlert('Email already exists', 'Error', back, { type: 'error' });
+                showAppAlert('That email is already registered. Sign in, or register with a different email address.', 'Email Already Registered', back, { type: 'error' });
             } else if (window.showAppAlert) {
-                window.showAppAlert('Email already exists', 'Error', back, { type: 'error' });
+                window.showAppAlert('That email is already registered. Sign in, or register with a different email address.', 'Email Already Registered', back, { type: 'error' });
             } else {
-                alert('Email already exists');
+                alert('That email is already registered. Sign in, or register with a different email address.');
                 back();
             }
         });
@@ -49,6 +50,13 @@ if (isset($_POST['signUp'])) {
     $insert->bind_param("sssss", $firstName, $lastName, $email, $plainPassword, $role);
 
     if ($insert->execute()) {
+        log_activity($conn, 'register', 'Created a new faculty account.', [
+            'user_id' => (int)$conn->insert_id,
+            'email' => $email,
+            'name' => trim($firstName . ' ' . $lastName),
+            'role' => 'faculty'
+        ]);
+
         echo "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Registration</title><link rel='stylesheet' href='style.css'></head><body>";
         include __DIR__ . '/../Faculty/includes/custom_alert_modal.php';
         echo "<script>
@@ -72,11 +80,11 @@ if (isset($_POST['signUp'])) {
         document.addEventListener('DOMContentLoaded', function() {
             var back = function(){ window.history.back(); };
             if (typeof showAppAlert === 'function') {
-                showAppAlert('Registration failed. Please try again.', 'Error', back, { type: 'error' });
+                showAppAlert('Registration could not be completed. Check your details and try again.', 'Registration Failed', back, { type: 'error' });
             } else if (window.showAppAlert) {
-                window.showAppAlert('Registration failed. Please try again.', 'Error', back, { type: 'error' });
+                window.showAppAlert('Registration could not be completed. Check your details and try again.', 'Registration Failed', back, { type: 'error' });
             } else {
-                alert('Registration failed. Please try again.');
+                alert('Registration could not be completed. Check your details and try again.');
                 back();
             }
         });
@@ -127,7 +135,7 @@ if (isset($_POST['signIn'])) {
         } else {
             error_log("Password verification failed for: " . $email);
             echo "<script>
-            alert('Wrong password');
+            alert('Incorrect password. Check your password and try again.');
             window.history.back();
             </script>";
             exit();
@@ -136,7 +144,7 @@ if (isset($_POST['signIn'])) {
     } else {
         error_log("User not found: " . $email);
         echo "<script>
-        alert('User not found');
+        alert('No account uses that email address. Check the email or create an account.');
         window.history.back();
         </script>";
         exit();
@@ -154,8 +162,16 @@ if (isset($_POST['signIn'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - CVSU Transportation System</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/Prototype/assets/css/theme.css">
+    <script src="/Prototype/assets/js/theme.js"></script>
 </head>
-<body>
+<body class="auth-theme-scope">
+
+<button type="button" class="theme-toggle auth-theme-toggle" onclick="toggleTheme();"
+        aria-label="Switch to dark mode" title="Switch to dark mode">
+    <span class="material-icons theme-toggle-icon">dark_mode</span>
+    <span class="theme-toggle-text">Dark</span>
+</button>
 
 <!-- Research Title -->
 <div class="research-title">

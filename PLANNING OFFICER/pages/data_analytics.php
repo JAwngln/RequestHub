@@ -51,6 +51,23 @@ $periodLabel = $selectedYear . ($selectedMonth !== null
     ? ' - ' . $monthNames[$selectedMonth]
     : '');
 
+// Display free-text entries (destinations, items) in Sentence Case. The same
+// string was previously shown exactly as typed, so "NAIC", "Naic" and "naic"
+// looked like different labels. Together with the case-insensitive GROUP BY
+// below, every capitalization of one entry is now detected as the same value.
+function analyticsSentenceCase($text) {
+    $text = trim(preg_replace('/\s+/u', ' ', (string)$text));
+    if ($text === '') {
+        return '';
+    }
+    if (function_exists('mb_strtolower')) {
+        $lower = mb_strtolower($text, 'UTF-8');
+        return mb_strtoupper(mb_substr($lower, 0, 1, 'UTF-8'), 'UTF-8')
+             . mb_substr($lower, 1, null, 'UTF-8');
+    }
+    return ucfirst(strtolower($text));
+}
+
 // Years come from the trip dates, not the submission dates, so the dropdown offers
 // exactly the years the report can actually be filtered to.
 $dataYears = array_values(array_unique(array_merge(
@@ -169,12 +186,12 @@ if ($result) {
 
 // Get top destinations for vehicle requests (all requests)
 $top_destinations = [];
-$sql = "SELECT destination, COUNT(*) as count,
+$sql = "SELECT MIN(TRIM(destination)) as destination, COUNT(*) as count,
     COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,
     COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
     FROM vehicle_requests 
     WHERE 1=1$yearScopeVehicle
-    GROUP BY destination 
+    GROUP BY LOWER(TRIM(destination))
     ORDER BY count DESC 
     LIMIT 10";
 $result = $conn->query($sql);
@@ -187,12 +204,12 @@ if ($result) {
 
 // Get top requested items (all requests)
 $top_items = [];
-$sql = "SELECT items, SUM(quantity) as total_quantity, COUNT(*) as request_count,
+$sql = "SELECT MIN(TRIM(items)) as items, SUM(quantity) as total_quantity, COUNT(*) as request_count,
     COUNT(CASE WHEN action = 'approved' THEN 1 END) as approved,
     COUNT(CASE WHEN action = 'pending' THEN 1 END) as pending
     FROM requested_items 
     WHERE 1=1$yearScopeItems
-    GROUP BY items 
+    GROUP BY LOWER(TRIM(items))
     ORDER BY request_count DESC 
     LIMIT 10";
 $result = $conn->query($sql);
@@ -1196,7 +1213,7 @@ if ($result) {
                     // Percentage of the track rather than a fixed pixel height, so the
                     // bar still fits when the track shrinks on smaller screens.
                     $heightPct = $max_dest > 0 ? ($dest['count'] / $max_dest) * 100 : 0;
-                    $destName = (string)$dest['destination'];
+                    $destName = analyticsSentenceCase($dest['destination']);
                 ?>
                     <div class="vertical-bar-item">
                         <div class="vertical-bar-container">
@@ -1225,7 +1242,7 @@ if ($result) {
                 $max_items = max(array_column($items_data, 'request_count'));
                 foreach ($items_data as $item): 
                     $heightPct = $max_items > 0 ? ($item['request_count'] / $max_items) * 100 : 0;
-                    $itemName = (string)$item['items'];
+                    $itemName = analyticsSentenceCase($item['items']);
                 ?>
                     <div class="vertical-bar-item">
                         <div class="vertical-bar-container">

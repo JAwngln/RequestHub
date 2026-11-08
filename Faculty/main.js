@@ -39,8 +39,8 @@ function loadPage(page) {
         .then(html => {
             document.getElementById("mainContent").innerHTML = html;
             
-            // Execute scripts if loading vehicle.php, request.php, account_settings.php, or calendar.php
-            if (page.includes('vehicle.php') || page.includes('request.php') || page.includes('account_settings.php') || page.includes('calendar.php')) {
+            // Execute scripts if loading vehicle.php, request.php, or calendar.php
+            if (page.includes('vehicle.php') || page.includes('request.php') || page.includes('calendar.php')) {
                 // Wait a bit for DOM to be ready
                 setTimeout(() => {
                     // Remove any existing vehicle.js script to prevent duplicates
@@ -124,24 +124,19 @@ function loadPage(page) {
                         document.body.appendChild(script);
                     }
                     
-                    // For account_settings.php, don't load any requested items
-                    if (page.includes('account_settings.php')) {
-                        // Just execute the inline scripts - no additional loading needed
-                    } else {
-                        // Initialize display functions for vehicle and request pages only
-                        setTimeout(() => {
-                            if (typeof displayRequests === 'function') {
-                                displayRequests();
-                            }
-                            if (typeof displayItemRequests === 'function') {
-                                displayItemRequests();
-                            }
-                            // Always try to load requested items for consistency
-                            if (typeof loadRequestedItems === 'function') {
-                                loadRequestedItems();
-                            }
-                        }, 200);
-                    }
+                    // Initialize display functions for vehicle and request pages only
+                    setTimeout(() => {
+                        if (typeof displayRequests === 'function') {
+                            displayRequests();
+                        }
+                        if (typeof displayItemRequests === 'function') {
+                            displayItemRequests();
+                        }
+                        // Always try to load requested items for consistency
+                        if (typeof loadRequestedItems === 'function') {
+                            loadRequestedItems();
+                        }
+                    }, 200);
                 }, 100);
             }
         })

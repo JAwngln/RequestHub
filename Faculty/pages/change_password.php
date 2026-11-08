@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../connect.php';
+require_once '../../activity_log.php';
 
 header('Content-Type: application/json');
 
@@ -46,6 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $updateStmt->bind_param("ss", $newPassword, $email);
     
     if ($updateStmt->execute()) {
+        if ($updateStmt->affected_rows > 0) {
+            log_activity($conn, 'password_changed', 'Changed their account password.');
+        }
         echo json_encode(['success' => true, 'message' => 'Password changed successfully']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to change password: ' . $updateStmt->error]);

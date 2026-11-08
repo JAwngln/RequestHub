@@ -5,6 +5,9 @@ if (!isset($_SESSION['email']) || trim($_SESSION['role']) !== 'faculty') {
     exit();
 }
 require_once $_SERVER['DOCUMENT_ROOT'] . '/Prototype/connect.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/Prototype/time_format.php';
+require_once __DIR__ . '/../../PLANNING OFFICER/includes/fleet_schema.php';
+ensureFleetSchema($conn);
 
 // Create calendar_events table if it doesn't exist
 $createTableSQL = "CREATE TABLE IF NOT EXISTS calendar_events (
@@ -88,22 +91,31 @@ $events = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $vrCols = "vr.id, vr.ticket_no, vr.ticket_year, vr.travel_date,
            vr.destination, vr.purpose, vr.passengers, vr.requested_by, vr.user_email,
            vr.attachment_name, vr.request_date, vr.status, vr.reviewed_at, vr.notes,
-           vr.created_at";
+           vr.created_at, vr.vehicle_id, vr.driver AS request_driver";
 $vrFaculty = "(SELECT CONCAT(u.firstName, ' ', u.lastName) FROM users u 
               WHERE u.email = vr.user_email
                  OR ((vr.user_email IS NULL OR vr.user_email = '') AND LOWER(CONCAT(u.firstName, ' ', u.lastName)) = LOWER(vr.requested_by))) AS faculty_name";
+// Fleet vehicle and its assigned driver, shown alongside each request on the calendar.
+$vrVehicle = "vf.plate_number AS vehicle_plate,
+              vf.vehicle_type AS vehicle_type,
+              vf.model AS vehicle_model,
+              d.full_name AS fleet_driver_name";
+$vrJoins = "LEFT JOIN vehicle_fleet vf ON vf.id = vr.vehicle_id
+            LEFT JOIN drivers d ON d.id = vf.driver_id";
 
 // Get vehicle requests for current year or month
 if ($view === 'month' && $month) {
-    $requests_sql = "SELECT $vrCols, $vrFaculty
+    $requests_sql = "SELECT $vrCols, $vrFaculty, $vrVehicle
                      FROM vehicle_requests vr 
+                     $vrJoins
                      WHERE MONTH(vr.travel_date) = ? AND YEAR(vr.travel_date) = ?
                      ORDER BY vr.travel_date";
     $stmt_requests = $conn->prepare($requests_sql);
     $stmt_requests->bind_param("ii", $month, $year);
 } else {
-    $requests_sql = "SELECT $vrCols, $vrFaculty
+    $requests_sql = "SELECT $vrCols, $vrFaculty, $vrVehicle
                      FROM vehicle_requests vr 
+                     $vrJoins
                      WHERE YEAR(vr.travel_date) = ?
                      ORDER BY vr.travel_date";
     $stmt_requests = $conn->prepare($requests_sql);
@@ -375,6 +387,15 @@ foreach ($vehicle_requests as $request) {
             -webkit-box-orient: vertical;
             overflow: hidden;
             box-sizing: border-box;
+        }
+
+        .event-item.request-event {
+            -webkit-line-clamp: 4;
+        }
+
+        .event-vehicle,
+        .event-driver {
+            opacity: 0.85;
         }
 
         .event-item:hover {
@@ -913,6 +934,10 @@ foreach ($vehicle_requests as $request) {
         -webkit-line-clamp: 2;
     }
 
+    .event-item.request-event {
+        -webkit-line-clamp: 4;
+    }
+
     /* Footer */
     .calendar-footer {
         flex-direction: column;
@@ -1264,12 +1289,18 @@ foreach ($vehicle_requests as $request) {
 }
 
 .calendar-day.has-events {
-    background: #f6fbf8;
+    background: #fff7e6;
+    box-shadow: inset 0 0 0 1px #f6c667;
 }
 
 .calendar-day.today {
     background: #eef5f0;
     box-shadow: inset 0 0 0 1px rgba(30, 94, 58, 0.3);
+}
+
+.calendar-day.today.has-events {
+    background: #fff3d6;
+    box-shadow: inset 0 0 0 2px #1E5E3A;
 }
 
 .day-number {
@@ -1307,6 +1338,16 @@ foreach ($vehicle_requests as $request) {
     border-color: #bfdbfe;
     border-left-color: #1d4ed8;
     color: #1d4ed8;
+    -webkit-line-clamp: 3;
+}
+
+.event-time {
+    display: block;
+    font-size: 8px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-top: 1px;
+    opacity: 0.85;
 }
 
 .event-item.more-indicator {
@@ -1379,13 +1420,19 @@ foreach ($vehicle_requests as $request) {
 }
 
 .mini-day.has-events {
-    background: #f6fbf8;
+    background: #fff7e6;
+    box-shadow: inset 0 0 0 1px #f6c667;
 }
 
 .mini-day.today {
     background: #eef5f0;
     color: #1E5E3A;
     font-weight: 700;
+}
+
+.mini-day.today.has-events {
+    background: #fff3d6;
+    box-shadow: inset 0 0 0 2px #1E5E3A;
 }
 
 .mini-event-dot {
@@ -1837,8 +1884,12 @@ foreach ($vehicle_requests as $request) {
                         foreach ($events_by_date[$currentDate] as $event_item) {
                             if ($event_item['type'] === 'calendar_event') {
                                 $event = $event_item['data'];
+                                $eventTime = format_event_time($event['event_time'] ?? '');
                                 echo '<div class="event-item calendar-event-item">';
                                 echo htmlspecialchars($event['title']);
+                                if ($eventTime !== '') {
+                                    echo '<span class="event-time">' . htmlspecialchars($eventTime) . '</span>';
+                                }
                                 echo '</div>';
                             }
                         }
@@ -1848,9 +1899,17 @@ foreach ($vehicle_requests as $request) {
                         foreach ($events_by_date[$currentDate] as $event_item) {
                             if ($event_item['type'] === 'vehicle_request') {
                                 $request = $event_item['data'];
-                                echo '<div class="event-item">';
+                                $vehicleLabel = trim(($request['vehicle_plate'] ?? '') . ' ' . (!empty($request['vehicle_model']) ? $request['vehicle_model'] : ($request['vehicle_type'] ?? '')));
+                                $driverLabel = !empty($request['request_driver']) ? $request['request_driver'] : ($request['fleet_driver_name'] ?? '');
+                                echo '<div class="event-item request-event">';
                                 echo '<strong>' . htmlspecialchars($request['destination']) . '</strong><br>';
                                 echo 'by ' . htmlspecialchars(!empty($request['faculty_name']) ? $request['faculty_name'] : $request['requested_by']);
+                                if ($vehicleLabel !== '') {
+                                    echo '<br><span class="event-vehicle">Vehicle: ' . htmlspecialchars($vehicleLabel) . '</span>';
+                                }
+                                if ($driverLabel !== '') {
+                                    echo '<br><span class="event-driver">Driver: ' . htmlspecialchars($driverLabel) . '</span>';
+                                }
                                 echo '</div>';
                                 $request_count++;
                                 // Limit to showing max 2 requests to avoid overcrowding
@@ -1916,7 +1975,20 @@ foreach ($vehicle_requests as $request) {
                         echo '<div class="mini-day' . ($isToday ? ' today' : '') . ($hasEvents ? ' has-events' : '') . '" onclick="window.loadPage(\'pages/calendar.php?view=month&month=' . $m . '&year=' . $year . '\')">';
                         echo $day;
                         if ($hasEvents) {
-                            echo '<div class="mini-event-dot" title="Has Requests"></div>';
+                            $dayLabels = [];
+                            foreach ($events_by_date[$currentDate] as $event_item) {
+                                if ($event_item['type'] === 'calendar_event') {
+                                    $label = $event_item['data']['title'];
+                                    $timeLabel = format_event_time($event_item['data']['event_time'] ?? '');
+                                    if ($timeLabel !== '') {
+                                        $label .= ' (' . $timeLabel . ')';
+                                    }
+                                    $dayLabels[] = $label;
+                                } elseif ($event_item['type'] === 'vehicle_request') {
+                                    $dayLabels[] = 'Vehicle request: ' . $event_item['data']['destination'];
+                                }
+                            }
+                            echo '<div class="mini-event-dot" title="' . htmlspecialchars(implode(' | ', $dayLabels)) . '"></div>';
                         }
                         echo '</div>';
                     }
@@ -1972,6 +2044,23 @@ foreach ($vehicle_requests as $request) {
             window.location.href = `?view=month&month=${month}&year=${year}`;
         };
 
+        // Render a stored MySQL TIME ("07:30:00") as a friendly clock time
+        // ("7:30 AM"). Anything unexpected is shown unchanged.
+        window.formatEventTime = function(value) {
+            const text = String(value || '').trim();
+            const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+            if (!match) return text;
+
+            const hour24 = Number(match[1]);
+            const minute = Number(match[2]);
+            const second = Number(match[3] || 0);
+            if (hour24 > 23 || minute > 59 || second > 59) return text;
+
+            const period = hour24 >= 12 ? 'PM' : 'AM';
+            const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+            return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+        };
+
         window.openEventModal = function(date = '') {
             document.getElementById('selectedDate').textContent = date;
             document.getElementById('requestsModal').style.display = 'block';
@@ -2005,10 +2094,9 @@ foreach ($vehicle_requests as $request) {
                         <div class="request-item" style="border-left: 4px solid #1976d2;">
                             <div class="request-header">
                                 <h4>${event.title}</h4>
-                                <span class="priority-badge priority-${event.priority}">${event.priority}</span>
                             </div>
                             <div class="request-details">
-                                ${event.event_time ? `<div class="detail-row"><strong>TIME:</strong> ${event.event_time}</div>` : ''}
+                                ${event.event_time ? `<div class="detail-row"><strong>TIME:</strong> ${window.formatEventTime(event.event_time)}</div>` : ''}
                                 ${event.description ? `<div class="detail-row"><strong>DESCRIPTION:</strong> ${event.description}</div>` : ''}
                             </div>
                         </div>
@@ -2020,6 +2108,8 @@ foreach ($vehicle_requests as $request) {
             if (requestsForDate.length > 0) {
                 html += '<h4 style="margin: 15px 0 10px; color: #1a4d2e;">VEHICLE REQUESTS</h4>';
                 requestsForDate.forEach((request, index) => {
+                    const vehicleLabel = [request.vehicle_plate, request.vehicle_model || request.vehicle_type].filter(Boolean).join(' ');
+                    const driverLabel = request.request_driver || request.fleet_driver_name || '';
                     html += `
                         <div class="request-item">
                             <div class="request-header">
@@ -2037,6 +2127,12 @@ foreach ($vehicle_requests as $request) {
                                 </div>
                                 <div class="detail-row">
                                     <strong>PASSENGERS:</strong> ${request.passengers}
+                                </div>
+                                <div class="detail-row">
+                                    <strong>VEHICLE:</strong> ${vehicleLabel || 'Not assigned yet'}
+                                </div>
+                                <div class="detail-row">
+                                    <strong>DRIVER:</strong> ${driverLabel || 'Not assigned yet'}
                                 </div>
                                 <div class="detail-row">
                                     <strong>TRAVEL DATE:</strong> ${request.travel_date}

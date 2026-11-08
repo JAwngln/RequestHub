@@ -8,6 +8,7 @@ if (!isset($_SESSION['email']) || $_SESSION['role'] !== 'faculty') {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_request') {
     require_once $_SERVER['DOCUMENT_ROOT'] . '/Prototype/connect.php';
+    require_once $_SERVER['DOCUMENT_ROOT'] . '/Prototype/activity_log.php';
 
     header('Content-Type: application/json');
 
@@ -32,11 +33,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             echo json_encode(['success' => false, 'message' => 'Please select a valid date for When Needed.']);
             exit;
         }
+        $today = new DateTimeImmutable('today');
+        if ($parsed_date < $today) {
+            echo json_encode(['success' => false, 'message' => 'When Needed cannot be in the past. Please select today or a future date.']);
+            exit;
+        }
         $when_needed = $parsed_date->format('Y-m-d');
     }
 
-    if ($names === '' || $items === '' || $quantity <= 0 || $reason === '') {
-        echo json_encode(['success' => false, 'message' => 'Please fill all required fields']);
+    if ($names === '' || $items === '' || $quantity <= 0 || $reason === '' || $when_needed === null) {
+        $missing = [];
+        if ($items === '') $missing[] = 'an item from the inventory list';
+        if ($quantity <= 0) $missing[] = 'a quantity of 1 or more';
+        if ($when_needed === null) $missing[] = 'a valid When Needed date';
+        if ($reason === '') $missing[] = 'a reason for the request';
+        if ($names === '') $missing[] = 'the requesting faculty name';
+
+        echo json_encode([
+            'success' => false,
+            'message' => 'Please provide ' . implode(', ', $missing) . '.'
+        ]);
         exit;
     }
 
@@ -109,6 +125,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
 
         $conn->commit();
+
+        // Activity log for the Planning Officer.
+        log_activity(
+            $conn,
+            'item_request_submitted',
+            "Requested {$quantity} x {$items} for {$when_needed}.",
+            ['target_type' => 'requested_items', 'target_id' => $insertId]
+        );
 
         $stockStatus = $newQuantity <= 0 ? 'out' : ($newQuantity <= $lowStockThreshold ? 'low' : 'in');
         echo json_encode([
@@ -453,7 +477,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                     <div class="form-field">
                         <label for="whenNeededInput">DATE / WHEN NEEDED</label>
-                        <input type="date" id="whenNeededInput" name="when_needed">
+                        <input type="date" id="whenNeededInput" name="when_needed" min="<?php echo date('Y-m-d'); ?>">
                     </div>
 
                     <div class="form-field form-field--full">
@@ -492,6 +516,18 @@ function itemNotify(message, title, type) {
     } else {
         alert(message);
     }
+}
+
+// Show the exact corrections needed, inline under each field and as a summary.
+function reportItemErrors(errors) {
+    if (typeof window.showFormErrors === 'function') {
+        window.showFormErrors('requestForm', errors, {
+            heading: 'Please correct the following before submitting your item request:'
+        });
+        return;
+    }
+
+    itemNotify(errors.map(function (item) { return item.message; }).join('\n'), 'Please Check the Form', 'warning');
 }
 
 // Normalize a date or datetime value to a calendar date (YYYY-MM-DD).
@@ -586,42 +622,53 @@ window.submitRequest = function() {
     const whenNeeded = document.getElementById('whenNeededInput');
     const reason = document.getElementById('reasonInput');
     const whenNeededDate = whenNeeded ? toDateOnly(whenNeeded.value) : '';
-    
-    // Validate form data
-    if (!select || !quantity || !whenNeeded || !reason || !select.value || !quantity.value || Number(quantity.value) <= 0 || !whenNeededDate || !reason.value.trim()) {
-        itemNotify('Please complete the item, quantity, when needed, and reason fields.', 'Missing Information', 'warning');
-        window.isSubmitting = false;
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'SUBMIT';
-        }
-        return;
-    }
-    
-    // Check the selected item against the latest stock snapshot
-    const selectedItem = select.value ? window.facultyInventoryCache[select.value] : null;
-    if (!selectedItem) {
-        itemNotify('Please select a valid item from the inventory list.', 'Select an Item', 'warning');
-        window.isSubmitting = false;
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'SUBMIT';
-        }
-        return;
+
+    if (typeof window.clearFormErrors === 'function') {
+        window.clearFormErrors('requestForm');
     }
 
-    if (Number(selectedItem.quantity) <= 0) {
-        itemNotify('The selected item is out of stock. Please select a different item.', 'Item Out of Stock', 'warning');
-        window.isSubmitting = false;
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'SUBMIT';
-        }
-        return;
+    // Past dates cannot be requested; compare as YYYY-MM-DD strings so no
+    // timezone conversion can shift the selected day.
+    const now = new Date();
+    const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Collect every problem at once so the user can correct the whole form in
+    // one pass instead of finding one missing field at a time.
+    const errors = [];
+    const itemValue = select ? String(select.value || '').trim() : '';
+    const hasItemSelection = itemValue !== '' && itemValue.toUpperCase() !== 'SELECT ITEM';
+    if (!hasItemSelection) {
+        errors.push({ field: 'itemSelect', message: 'Select an item from the inventory list.' });
+    }
+    if (!quantity || !quantity.value || Number(quantity.value) <= 0) {
+        errors.push({ field: 'quantityInput', message: 'Enter a quantity of 1 or more.' });
+    }
+    if (!whenNeededDate) {
+        errors.push({ field: 'whenNeededInput', message: 'Choose the date when you need the item.' });
+    } else if (whenNeededDate < todayDate) {
+        errors.push({ field: 'whenNeededInput', message: 'The date when needed cannot be in the past. Choose today or a future date.' });
+    }
+    if (!reason || !reason.value.trim()) {
+        errors.push({ field: 'reasonInput', message: 'Explain why you need the item.' });
     }
 
-    if (Number(quantity.value) > Number(selectedItem.quantity)) {
-        itemNotify(`Only ${selectedItem.quantity} unit(s) of ${selectedItem.name} are available.`, 'Not Enough Stock', 'warning');
+    // Check the selected item against the latest stock snapshot.
+    const selectedItem = hasItemSelection ? window.facultyInventoryCache[itemValue] : null;
+    if (hasItemSelection && !selectedItem) {
+        errors.push({ field: 'itemSelect', message: 'That item is no longer in the inventory list. Select another item.' });
+    } else if (selectedItem) {
+        if (Number(selectedItem.quantity) <= 0) {
+            errors.push({ field: 'itemSelect', message: `${selectedItem.name} is out of stock. Select a different item.` });
+        } else if (quantity && quantity.value && Number(quantity.value) > Number(selectedItem.quantity)) {
+            errors.push({
+                field: 'quantityInput',
+                message: `Only ${selectedItem.quantity} unit(s) of ${selectedItem.name} are available. Enter ${selectedItem.quantity} or fewer.`
+            });
+        }
+    }
+
+    if (errors.length > 0) {
+        reportItemErrors(errors);
         window.isSubmitting = false;
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -634,7 +681,7 @@ window.submitRequest = function() {
     const formData = new FormData();
     formData.append('action', 'submit_request');
     formData.append('names', '<?php echo isset($_SESSION["firstName"]) && isset($_SESSION["lastName"]) ? $_SESSION["firstName"] . " " . $_SESSION["lastName"] : (isset($_SESSION["email"]) ? $_SESSION["email"] : "Faculty User"); ?>');
-    formData.append('items', select.value);
+    formData.append('items', itemValue);
     formData.append('quantity', quantity.value);
     formData.append('when_needed', whenNeededDate);
     formData.append('reason', reason.value);

@@ -5,6 +5,9 @@ if (!isset($_SESSION['email']) || trim($_SESSION['role']) !== 'planning_officer'
     exit();
 }
 require_once $_SERVER['DOCUMENT_ROOT'] . '/Prototype/connect.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/Prototype/time_format.php';
+require_once __DIR__ . '/../includes/fleet_schema.php';
+ensureFleetSchema($conn);
 
 // Create calendar_events table if it doesn't exist
 $createTableSQL = "CREATE TABLE IF NOT EXISTS calendar_events (
@@ -25,18 +28,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'add_event':
-                $title = $_POST['title'];
-                $description = $_POST['description'];
-                $event_date = $_POST['event_date'];
-                $event_time = $_POST['event_time'];
-                $priority = $_POST['priority'];
+                $title = trim((string)($_POST['title'] ?? ''));
+                $description = trim((string)($_POST['description'] ?? ''));
+                $event_date = trim((string)($_POST['event_date'] ?? ''));
+                $event_time = trim((string)($_POST['event_time'] ?? ''));
                 $created_by = $_SESSION['email'];
-                
-                $sql = "INSERT INTO calendar_events (title, description, event_date, event_time, priority, created_by) 
-                        VALUES (?, ?, ?, ?, ?, ?)";
+
+                if ($title === '') {
+                    http_response_code(422);
+                    echo 'Please enter an event title.';
+                    break;
+                }
+
+                // Never allow an event to be created on a past date, even if the
+                // browser-side min attribute is bypassed.
+                if ($event_date === '' || $event_date < date('Y-m-d')) {
+                    http_response_code(422);
+                    echo 'Events cannot be added on a past date. Please select today or a future date.';
+                    break;
+                }
+
+                // Time is optional; store NULL instead of an empty string so
+                // MySQL never rejects the row.
+                if ($event_time === '') {
+                    $event_time = null;
+                }
+
+                $sql = "INSERT INTO calendar_events (title, description, event_date, event_time, created_by)
+                        VALUES (?, ?, ?, ?, ?)";
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ssssss", $title, $description, $event_date, $event_time, $priority, $created_by);
-                $stmt->execute();
+                if (!$stmt) {
+                    http_response_code(500);
+                    echo 'Unable to add the event right now.';
+                    break;
+                }
+                $stmt->bind_param("sssss", $title, $description, $event_date, $event_time, $created_by);
+                if (!$stmt->execute()) {
+                    http_response_code(500);
+                    echo 'Failed to add the event: ' . $stmt->error;
+                    break;
+                }
+                $stmt->close();
                 break;
                 
             case 'delete_event':
@@ -108,22 +140,31 @@ $events = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $vrCols = "vr.id, vr.ticket_no, vr.ticket_year, vr.travel_date,
            vr.destination, vr.purpose, vr.passengers, vr.requested_by, vr.user_email,
            vr.attachment_name, vr.request_date, vr.status, vr.reviewed_at, vr.notes,
-           vr.created_at";
+           vr.created_at, vr.vehicle_id, vr.driver AS request_driver";
 $vrFaculty = "(SELECT CONCAT(u.firstName, ' ', u.lastName) FROM users u 
               WHERE u.email = vr.user_email
                  OR ((vr.user_email IS NULL OR vr.user_email = '') AND LOWER(CONCAT(u.firstName, ' ', u.lastName)) = LOWER(vr.requested_by))) AS faculty_name";
+// Fleet vehicle and its assigned driver, shown alongside each request on the calendar.
+$vrVehicle = "vf.plate_number AS vehicle_plate,
+              vf.vehicle_type AS vehicle_type,
+              vf.model AS vehicle_model,
+              d.full_name AS fleet_driver_name";
+$vrJoins = "LEFT JOIN vehicle_fleet vf ON vf.id = vr.vehicle_id
+            LEFT JOIN drivers d ON d.id = vf.driver_id";
 
 // Get vehicle requests for current year or month
 if ($view === 'month' && $month) {
-    $requests_sql = "SELECT $vrCols, $vrFaculty
+    $requests_sql = "SELECT $vrCols, $vrFaculty, $vrVehicle
                      FROM vehicle_requests vr 
+                     $vrJoins
                      WHERE MONTH(vr.travel_date) = ? AND YEAR(vr.travel_date) = ?
                      ORDER BY vr.travel_date";
     $stmt_requests = $conn->prepare($requests_sql);
     $stmt_requests->bind_param("ii", $month, $year);
 } else {
-    $requests_sql = "SELECT $vrCols, $vrFaculty
+    $requests_sql = "SELECT $vrCols, $vrFaculty, $vrVehicle
                      FROM vehicle_requests vr 
+                     $vrJoins
                      WHERE YEAR(vr.travel_date) = ?
                      ORDER BY vr.travel_date";
     $stmt_requests = $conn->prepare($requests_sql);
@@ -395,6 +436,15 @@ foreach ($vehicle_requests as $request) {
             -webkit-box-orient: vertical;
             overflow: hidden;
             box-sizing: border-box;
+        }
+
+        .event-item.request-event {
+            -webkit-line-clamp: 4;
+        }
+
+        .event-vehicle,
+        .event-driver {
+            opacity: 0.85;
         }
 
         .event-item:hover {
@@ -775,6 +825,59 @@ foreach ($vehicle_requests as $request) {
             box-shadow: 0 0 0 2px rgba(26, 77, 46, 0.2);
         }
 
+        /* Date and time share one aligned row in the Add Event modal */
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row .form-group {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        /* Custom time picker: hour, minute and AM/PM line up as equal columns */
+        .time-picker {
+            align-items: center;
+            display: flex;
+            gap: 6px;
+        }
+
+        .time-picker .time-part {
+            flex: 1 1 0;
+            min-width: 0;
+            padding-left: 4px;
+            padding-right: 4px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .time-picker .time-period {
+            flex: 0 0 74px;
+        }
+
+        .time-picker .time-separator {
+            color: #6b7280;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        /* The chosen hour/minute stay visibly highlighted */
+        .time-picker .time-part.has-value {
+            background: #ecfdf3;
+            border-color: #1E5E3A;
+            box-shadow: 0 0 0 2px rgba(30, 94, 58, 0.12);
+            color: #067647;
+            font-weight: 700;
+        }
+
+        @media (max-width: 520px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
         .form-actions {
             display: flex;
             gap: 10px;
@@ -931,6 +1034,10 @@ foreach ($vehicle_requests as $request) {
         font-size: 8px;
         padding: 1px 4px;
         -webkit-line-clamp: 2;
+    }
+
+    .event-item.request-event {
+        -webkit-line-clamp: 4;
     }
 
     /* Footer */
@@ -1270,12 +1377,18 @@ foreach ($vehicle_requests as $request) {
 }
 
 .calendar-day.has-events {
-    background: #f6fbf8;
+    background: #fff7e6;
+    box-shadow: inset 0 0 0 1px #f6c667;
 }
 
 .calendar-day.today {
     background: #eef5f0;
     box-shadow: inset 0 0 0 1px rgba(30, 94, 58, 0.3);
+}
+
+.calendar-day.today.has-events {
+    background: #fff3d6;
+    box-shadow: inset 0 0 0 2px #1E5E3A;
 }
 
 .day-number {
@@ -1313,6 +1426,16 @@ foreach ($vehicle_requests as $request) {
     border-color: #bfdbfe;
     border-left-color: #1d4ed8;
     color: #1d4ed8;
+    -webkit-line-clamp: 3;
+}
+
+.event-time {
+    display: block;
+    font-size: 8px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-top: 1px;
+    opacity: 0.85;
 }
 
 .event-item.more-indicator {
@@ -1385,13 +1508,19 @@ foreach ($vehicle_requests as $request) {
 }
 
 .mini-day.has-events {
-    background: #f6fbf8;
+    background: #fff7e6;
+    box-shadow: inset 0 0 0 1px #f6c667;
 }
 
 .mini-day.today {
     background: #eef5f0;
     color: #1E5E3A;
     font-weight: 700;
+}
+
+.mini-day.today.has-events {
+    background: #fff3d6;
+    box-shadow: inset 0 0 0 2px #1E5E3A;
 }
 
 .mini-event-dot {
@@ -1847,8 +1976,12 @@ foreach ($vehicle_requests as $request) {
                         foreach ($events_by_date[$currentDate] as $event_item) {
                             if ($event_item['type'] === 'calendar_event') {
                                 $event = $event_item['data'];
+                                $eventTime = format_event_time($event['event_time'] ?? '');
                                 echo '<div class="event-item calendar-event-item">';
                                 echo htmlspecialchars($event['title']);
+                                if ($eventTime !== '') {
+                                    echo '<span class="event-time">' . htmlspecialchars($eventTime) . '</span>';
+                                }
                                 echo '</div>';
                             }
                         }
@@ -1858,9 +1991,17 @@ foreach ($vehicle_requests as $request) {
                         foreach ($events_by_date[$currentDate] as $event_item) {
                             if ($event_item['type'] === 'vehicle_request') {
                                 $request = $event_item['data'];
-                                echo '<div class="event-item">';
+                                $vehicleLabel = trim(($request['vehicle_plate'] ?? '') . ' ' . (!empty($request['vehicle_model']) ? $request['vehicle_model'] : ($request['vehicle_type'] ?? '')));
+                                $driverLabel = !empty($request['request_driver']) ? $request['request_driver'] : ($request['fleet_driver_name'] ?? '');
+                                echo '<div class="event-item request-event">';
                                 echo '<strong>' . htmlspecialchars($request['destination']) . '</strong><br>';
                                 echo 'by ' . htmlspecialchars(!empty($request['faculty_name']) ? $request['faculty_name'] : $request['requested_by']);
+                                if ($vehicleLabel !== '') {
+                                    echo '<br><span class="event-vehicle">Vehicle: ' . htmlspecialchars($vehicleLabel) . '</span>';
+                                }
+                                if ($driverLabel !== '') {
+                                    echo '<br><span class="event-driver">Driver: ' . htmlspecialchars($driverLabel) . '</span>';
+                                }
                                 echo '</div>';
                                 $request_count++;
                                 // Limit to showing max 2 requests to avoid overcrowding
@@ -1926,7 +2067,20 @@ foreach ($vehicle_requests as $request) {
                         echo '<div class="mini-day' . ($isToday ? ' today' : '') . ($hasEvents ? ' has-events' : '') . '" onclick="window.loadPage(\'pages/calendar.php?view=month&month=' . $m . '&year=' . $year . '\')">';
                         echo $day;
                         if ($hasEvents) {
-                            echo '<div class="mini-event-dot" title="Has Requests"></div>';
+                            $dayLabels = [];
+                            foreach ($events_by_date[$currentDate] as $event_item) {
+                                if ($event_item['type'] === 'calendar_event') {
+                                    $label = $event_item['data']['title'];
+                                    $timeLabel = format_event_time($event_item['data']['event_time'] ?? '');
+                                    if ($timeLabel !== '') {
+                                        $label .= ' (' . $timeLabel . ')';
+                                    }
+                                    $dayLabels[] = $label;
+                                } elseif ($event_item['type'] === 'vehicle_request') {
+                                    $dayLabels[] = 'Vehicle request: ' . $event_item['data']['destination'];
+                                }
+                            }
+                            echo '<div class="mini-event-dot" title="' . htmlspecialchars(implode(' | ', $dayLabels)) . '"></div>';
                         }
                         echo '</div>';
                     }
@@ -1983,7 +2137,7 @@ foreach ($vehicle_requests as $request) {
                 <div class="modal-title">Add Event</div>
                 <button class="close-btn" onclick="window.closeEventModal()">&times;</button>
             </div>
-            <form id="addEventForm" onsubmit="return window.submitAddEvent(event)">
+            <form id="addEventForm" novalidate onsubmit="return window.submitAddEvent(event)">
                 <input type="hidden" name="action" value="add_event">
                 <div class="form-group">
                     <label for="title">Event Title</label>
@@ -1993,21 +2147,34 @@ foreach ($vehicle_requests as $request) {
                     <label for="description">Description (optional)</label>
                     <textarea id="description" name="description" rows="3" placeholder="Enter event description"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="event_date">Date</label>
-                    <input type="date" id="event_date" name="event_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="event_time">Time (optional)</label>
-                    <input type="time" id="event_time" name="event_time">
-                </div>
-                <div class="form-group">
-                    <label for="priority">Priority</label>
-                    <select id="priority" name="priority">
-                        <option value="low">Low</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="high">High</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="event_date">Date</label>
+                        <input type="date" id="event_date" name="event_date" min="<?php echo date('Y-m-d'); ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventHour">Time (optional)</label>
+                        <div class="time-picker">
+                            <select id="eventHour" class="time-part" aria-label="Hour">
+                                <option value="">HH</option>
+                                <?php for ($h = 1; $h <= 12; $h++): ?>
+                                    <option value="<?php echo $h; ?>"><?php echo str_pad((string)$h, 2, '0', STR_PAD_LEFT); ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <span class="time-separator">:</span>
+                            <select id="eventMinute" class="time-part" aria-label="Minute">
+                                <option value="">MM</option>
+                                <?php for ($m = 0; $m < 60; $m++): ?>
+                                    <option value="<?php echo str_pad((string)$m, 2, '0', STR_PAD_LEFT); ?>"><?php echo str_pad((string)$m, 2, '0', STR_PAD_LEFT); ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <select id="eventPeriod" class="time-part time-period" aria-label="AM or PM">
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="event_time" name="event_time" value="">
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn secondary" onclick="window.closeEventModal()">Cancel</button>
@@ -2021,6 +2188,78 @@ foreach ($vehicle_requests as $request) {
         // Make functions global so they work with dynamic loading
         window.zoomToMonth = function(month, year) {
             window.location.href = `?view=month&month=${month}&year=${year}`;
+        };
+
+        // Keep the custom hour / minute / AM-PM picker and the hidden
+        // event_time field in sync. Empty hour or minute means "no time".
+        window.syncEventTime = function() {
+            const hourSelect = document.getElementById('eventHour');
+            const minuteSelect = document.getElementById('eventMinute');
+            const periodSelect = document.getElementById('eventPeriod');
+            const hidden = document.getElementById('event_time');
+            if (!hourSelect || !minuteSelect || !periodSelect || !hidden) return;
+
+            const hour12 = hourSelect.value;
+            const minute = minuteSelect.value;
+            const period = periodSelect.value || 'AM';
+
+            hourSelect.classList.toggle('has-value', hour12 !== '');
+            minuteSelect.classList.toggle('has-value', minute !== '');
+
+            if (hour12 === '' || minute === '') {
+                hidden.value = '';
+                return;
+            }
+
+            let hour24 = Number(hour12) % 12;
+            if (period === 'PM') hour24 += 12;
+            hidden.value = `${String(hour24).padStart(2, '0')}:${minute}`;
+        };
+
+        window.setEventTime = function(value) {
+            const hourSelect = document.getElementById('eventHour');
+            const minuteSelect = document.getElementById('eventMinute');
+            const periodSelect = document.getElementById('eventPeriod');
+            if (!hourSelect || !minuteSelect || !periodSelect) return;
+
+            const match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
+            if (match) {
+                const hour24 = Number(match[1]);
+                let hour12 = hour24 % 12;
+                if (hour12 === 0) hour12 = 12;
+                hourSelect.value = String(hour12);
+                minuteSelect.value = match[2];
+                periodSelect.value = hour24 >= 12 ? 'PM' : 'AM';
+            } else {
+                hourSelect.value = '';
+                minuteSelect.value = '';
+                periodSelect.value = 'AM';
+            }
+            window.syncEventTime();
+        };
+
+        ['eventHour', 'eventMinute', 'eventPeriod'].forEach(function(id) {
+            const select = document.getElementById(id);
+            if (select) {
+                select.addEventListener('change', window.syncEventTime);
+            }
+        });
+
+        // Render a stored MySQL TIME ("07:30:00") as a friendly clock time
+        // ("7:30 AM"). Anything unexpected is shown unchanged.
+        window.formatEventTime = function(value) {
+            const text = String(value || '').trim();
+            const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+            if (!match) return text;
+
+            const hour24 = Number(match[1]);
+            const minute = Number(match[2]);
+            const second = Number(match[3] || 0);
+            if (hour24 > 23 || minute > 59 || second > 59) return text;
+
+            const period = hour24 >= 12 ? 'PM' : 'AM';
+            const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+            return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
         };
 
         window.openEventModal = function(date = '') {
@@ -2056,10 +2295,9 @@ foreach ($vehicle_requests as $request) {
                         <div class="request-item" style="border-left: 4px solid #1976d2;">
                             <div class="request-header">
                                 <h4>${event.title}</h4>
-                                <span class="priority-badge priority-${event.priority}">${event.priority}</span>
                             </div>
                             <div class="request-details">
-                                ${event.event_time ? `<div class="detail-row"><strong>TIME:</strong> ${event.event_time}</div>` : ''}
+                                ${event.event_time ? `<div class="detail-row"><strong>TIME:</strong> ${window.formatEventTime(event.event_time)}</div>` : ''}
                                 ${event.description ? `<div class="detail-row"><strong>DESCRIPTION:</strong> ${event.description}</div>` : ''}
                             </div>
                             <div class="form-actions" style="margin-top: 10px;">
@@ -2074,6 +2312,8 @@ foreach ($vehicle_requests as $request) {
             if (requestsForDate.length > 0) {
                 html += '<h4 style="margin: 15px 0 10px; color: #1a4d2e;">VEHICLE REQUESTS</h4>';
                 requestsForDate.forEach((request, index) => {
+                    const vehicleLabel = [request.vehicle_plate, request.vehicle_model || request.vehicle_type].filter(Boolean).join(' ');
+                    const driverLabel = request.request_driver || request.fleet_driver_name || '';
                     html += `
                         <div class="request-item">
                             <div class="request-header">
@@ -2091,6 +2331,12 @@ foreach ($vehicle_requests as $request) {
                                 </div>
                                 <div class="detail-row">
                                     <strong>PASSENGERS:</strong> ${request.passengers}
+                                </div>
+                                <div class="detail-row">
+                                    <strong>VEHICLE:</strong> ${vehicleLabel || 'Not assigned yet'}
+                                </div>
+                                <div class="detail-row">
+                                    <strong>DRIVER:</strong> ${driverLabel || 'Not assigned yet'}
                                 </div>
                                 <div class="detail-row">
                                     <strong>TRAVEL DATE:</strong> ${request.travel_date}
@@ -2117,19 +2363,29 @@ foreach ($vehicle_requests as $request) {
         };
 
         window.openAddEventModal = function(date = '') {
+            if (typeof window.clearFormErrors === 'function') {
+                window.clearFormErrors('addEventForm');
+            }
             document.getElementById('eventModal').style.display = 'block';
+            window.setEventTime('');
             if (date) {
-                document.getElementById('event_date').value = date;
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                // Past dates cannot host new events; fall back to today.
+                document.getElementById('event_date').value = date < todayStr ? todayStr : date;
             }
         };
 
         window.closeEventModal = function() {
+            if (typeof window.clearFormErrors === 'function') {
+                window.clearFormErrors('addEventForm');
+            }
             document.getElementById('eventModal').style.display = 'none';
         };
 
         window.deleteEvent = function(eventId) {
             showAppConfirm('Are you sure you want to delete this event?', 'Delete Event?', function () {
-                fetch('calendar.php', {
+                fetch('/Prototype/PLANNING%20OFFICER/pages/calendar.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'action=delete_event&event_id=' + eventId
@@ -2153,40 +2409,80 @@ foreach ($vehicle_requests as $request) {
         window.submitAddEvent = function(e) {
             if (e) e.preventDefault();
 
-            const title = document.getElementById('title').value.trim();
-            const date = document.getElementById('event_date').value;
-
-            if (!title) {
-                showAppAlert('Please enter an event title.', 'Missing Information', null, { type: 'warning' });
-                return false;
+            if (typeof window.clearFormErrors === 'function') {
+                window.clearFormErrors('addEventForm');
             }
 
+            const title = document.getElementById('title').value.trim();
+            const date = document.getElementById('event_date').value;
+            const hour = document.getElementById('eventHour').value;
+            const minute = document.getElementById('eventMinute').value;
+
+            // Collect all problems so the user can fix the form in one pass.
+            const errors = [];
+            if (!title) {
+                errors.push({ field: 'title', message: 'Enter a title for the event.' });
+            }
             if (!date) {
-                showAppAlert('Please select a date.', 'Missing Information', null, { type: 'warning' });
+                errors.push({ field: 'event_date', message: 'Choose the date of the event.' });
+            } else {
+                // Events can only be added today or later.
+                const now = new Date();
+                const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                if (date < todayDate) {
+                    errors.push({ field: 'event_date', message: 'Events cannot be added on a past date. Choose today or a future date.' });
+                }
+            }
+            if ((hour && !minute) || (!hour && minute)) {
+                errors.push({
+                    field: hour ? 'eventMinute' : 'eventHour',
+                    message: 'Choose both an hour and a minute, or leave the time fields empty.'
+                });
+            }
+
+            if (errors.length > 0) {
+                if (typeof window.showFormErrors === 'function') {
+                    window.showFormErrors('addEventForm', errors, {
+                        heading: 'Please correct the following before adding the event:'
+                    });
+                } else {
+                    showAppAlert(errors.map(function (item) { return item.message; }).join('\n'), 'Please Check the Form', null, { type: 'warning' });
+                }
                 return false;
             }
 
             const form = document.getElementById('addEventForm');
             const body = new URLSearchParams(new FormData(form));
 
-            fetch('calendar.php', {
+            fetch('/Prototype/PLANNING%20OFFICER/pages/calendar.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body.toString()
             })
-            .then(res => res.text())
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(message => {
+                        throw new Error(message || 'Failed to add event.');
+                    });
+                }
+                return res.text();
+            })
             .then(() => {
                 window.closeEventModal();
-                // Reload the calendar view to show the new event
+                // Reload the calendar on the year of the new event so it is visible.
+                const targetYear = date.slice(0, 4) || String(new Date().getFullYear());
                 if (typeof window.loadPage === 'function') {
-                    window.loadPage('pages/calendar.php?view=year&year=' + new Date().getFullYear());
+                    window.loadPage('pages/calendar.php?view=year&year=' + targetYear);
                 } else {
                     window.location.reload();
                 }
             })
             .catch(err => {
                 console.error('Error adding event:', err);
-                showAppAlert('Failed to add event. Please try again.', 'Unable to Add Event', null, { type: 'error' });
+                const message = err && err.message && err.message.trim()
+                    ? err.message.trim()
+                    : 'Failed to add event. Please try again.';
+                showAppAlert(message, 'Unable to Add Event', null, { type: 'error' });
             });
 
             return false;

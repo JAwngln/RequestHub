@@ -1,5 +1,10 @@
 <?php
 
+// Keep PHP's clock on the same timezone as the MySQL server so relative
+// notification times ("x minutes ago") are accurate instead of being offset
+// by the host machine's timezone.
+date_default_timezone_set('Asia/Manila');
+
 $host="127.0.0.1";
 $port="3306";
 $user="root";
@@ -8,6 +13,10 @@ $db="login";
 $conn=new mysqli($host,$user,$pass,$db,$port);
 if($conn->connect_error){
     echo "Failed to connect DB".$conn->connect_error;
+} else {
+    // Pin the session timezone too, so TIMESTAMP columns and NOW() always
+    // agree with PHP regardless of the server's SYSTEM timezone setting.
+    @$conn->query("SET time_zone = '+08:00'");
 }
 
 /**
@@ -145,4 +154,38 @@ function ensureDriverColumn($conn) {
 }
 
 ensureDriverColumn($conn);
+
+/**
+ * Passenger names are entered as one free-text line and can hold more than the
+ * five names the old VARCHAR(50) column assumed. With MySQL not running in
+ * strict mode, anything longer than the column width was silently truncated on
+ * insert, so the Planning Officer list and the printed Travel Order showed a
+ * cut-off list. Widen the column to TEXT once and leave it alone afterwards.
+ *
+ * Idempotent: one SHOW COLUMNS check per request, so it is safe on every load.
+ */
+function ensurePassengerColumn($conn) {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+
+    $col = $conn->query("SHOW COLUMNS FROM vehicle_requests LIKE 'passengers'");
+    if (!$col || !($row = $col->fetch_assoc())) {
+        return;
+    }
+
+    $type = strtolower((string)($row['Type'] ?? ''));
+    $alreadyWide = strpos($type, 'text') !== false || strpos($type, 'blob') !== false;
+    if ($alreadyWide) {
+        return;
+    }
+
+    if (!$conn->query("ALTER TABLE vehicle_requests MODIFY passengers TEXT NOT NULL")) {
+        error_log("ensurePassengerColumn: could not widen vehicle_requests.passengers (" . $conn->error . ")");
+    }
+}
+
+ensurePassengerColumn($conn);
 ?>

@@ -398,11 +398,52 @@ $conn->close();
 
         .user-actions {
             display: flex;
+            align-items: flex-end;
             gap: 10px;
             flex-wrap: wrap;
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid #e5e7eb;
+        }
+
+        .role-control {
+            display: flex;
+            flex: 1 1 140px;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 140px;
+        }
+
+        .role-control-label {
+            color: var(--ppss-muted, #6b7280);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .role-select {
+            background: var(--ppss-input-bg, #ffffff);
+            border: 1px solid var(--ppss-input-border, #d1d5db);
+            border-radius: 8px;
+            color: var(--ppss-text, #1f2937);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            height: 34px;
+            padding: 0 10px;
+        }
+
+        .role-select:focus {
+            border-color: var(--ppss-primary, #1e5e3a);
+            box-shadow: 0 0 0 3px rgba(30, 94, 58, 0.14);
+            outline: none;
+        }
+
+        .role-select:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         .action-btn {
@@ -434,6 +475,31 @@ $conn->close();
         .delete-btn:hover {
             background: #fef3f2;
             border-color: #fda29b;
+        }
+
+        .role-btn {
+            background: var(--ppss-success-soft, #ecfdf3);
+            border: 1px solid var(--ppss-success-border, #abefc6);
+            color: var(--ppss-success, #067647);
+        }
+
+        .role-btn:hover:not(:disabled) {
+            border-color: var(--ppss-success, #067647);
+        }
+
+        .action-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .password-btn {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .password-btn:hover:not(:disabled) {
+            border-color: #1d4ed8;
         }
 
         .error-message,
@@ -642,6 +708,111 @@ $conn->close();
             color: #b42318;
         }
 
+        /* ================= CHANGE PASSWORD MODAL ================= */
+        .password-modal-content {
+            max-width: 440px;
+        }
+
+        .password-target {
+            color: var(--ppss-muted, #6b7280);
+            font-size: 12.5px;
+            line-height: 1.5;
+            margin: -8px 0 10px;
+        }
+
+        .password-target strong {
+            color: var(--ppss-text, #1f2937);
+            font-weight: 600;
+        }
+
+        .password-field-label {
+            color: var(--ppss-muted, #6b7280);
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            margin: 12px 0 6px;
+            text-transform: uppercase;
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .password-field input {
+            background: var(--ppss-input-bg, #ffffff);
+            border: 1px solid var(--ppss-input-border, #d1d5db);
+            border-radius: 8px;
+            box-sizing: border-box;
+            color: var(--ppss-text, #1f2937);
+            font-family: inherit;
+            font-size: 13px;
+            height: 40px;
+            padding: 0 44px 0 12px;
+            width: 100%;
+        }
+
+        .password-field input:focus {
+            border-color: var(--ppss-primary, #1E5E3A);
+            box-shadow: 0 0 0 3px rgba(30, 94, 58, 0.14);
+            outline: none;
+        }
+
+        .password-field input.is-invalid {
+            border-color: #d92d20;
+            box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.12);
+        }
+
+        .password-field .password-visibility {
+            align-items: center;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--ppss-muted, #6b7280);
+            cursor: pointer;
+            display: inline-flex;
+            height: 30px;
+            justify-content: center;
+            padding: 0;
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            width: 30px;
+        }
+
+        .password-field .password-visibility:hover {
+            color: var(--ppss-primary, #1E5E3A);
+        }
+
+        .password-field .password-visibility .material-icons {
+            font-size: 18px;
+        }
+
+        .password-field-error {
+            color: var(--ppss-danger, #b42318);
+            font-size: 11.5px;
+            line-height: 1.4;
+            min-height: 16px;
+        }
+
+        .password-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .password-save-btn {
+            background: var(--ppss-primary, #1E5E3A);
+            border: 1px solid var(--ppss-primary, #1E5E3A);
+            color: #ffffff;
+        }
+
+        .password-save-btn:hover:not(:disabled) {
+            background: var(--ppss-primary-hover, #174a2e);
+            border-color: var(--ppss-primary-hover, #174a2e);
+        }
+
         .role-badge {
             display: inline-block;
             padding: 6px 14px;
@@ -716,7 +887,6 @@ $conn->close();
                 <div class="vr-tabs" role="tablist" aria-label="Filter users by role">
                     <button type="button" class="vr-tab active" data-role="all" role="tab" aria-selected="true" onclick="filterUsersByRole('all')">All Users</button>
                     <button type="button" class="vr-tab" data-role="faculty" role="tab" aria-selected="false" onclick="filterUsersByRole('faculty')">Faculty</button>
-                    <button type="button" class="vr-tab" data-role="planning_officer" role="tab" aria-selected="false" onclick="filterUsersByRole('planning_officer')">Planning Officer</button>
                     <button type="button" class="vr-tab" data-role="admin" role="tab" aria-selected="false" onclick="filterUsersByRole('admin')">Admin</button>
                 </div>
 
@@ -742,9 +912,18 @@ $conn->close();
                         <?php
                             $fullName = trim($user['firstName'] . ' ' . $user['lastName']);
                             $initials = strtoupper(substr($user['firstName'] ?? '', 0, 1) . substr($user['lastName'] ?? '', 0, 1));
-                            $roleLabel = str_replace('_', ' ', $user['role']);
+                            // The planning officer account is presented as "Admin" in this page.
+                            $roleLabel = $user['role'] === 'planning_officer'
+                                ? 'admin'
+                                : str_replace('_', ' ', $user['role']);
+                            $isSelf = strcasecmp(
+                                (string)$user['email'],
+                                (string)($_SESSION['email'] ?? '')
+                            ) === 0;
                         ?>
-                        <div class="user-card" data-user-id="<?php echo (int)$user['id']; ?>" data-role="<?php echo htmlspecialchars($user['role']); ?>">
+                        <div class="user-card" data-user-id="<?php echo (int)$user['id']; ?>"
+                             data-role="<?php echo htmlspecialchars($user['role']); ?>"
+                             data-search="<?php echo htmlspecialchars(strtolower($fullName . ' ' . $user['email'] . ' ' . $roleLabel)); ?>">
                             <div class="user-card-header">
                                 <div class="user-identity">
                                     <span class="user-avatar"><?php echo htmlspecialchars($initials ?: '?'); ?></span>
@@ -782,6 +961,26 @@ $conn->close();
                             </div>
 
                             <div class="user-actions">
+                                <div class="role-control">
+                                    <label class="role-control-label" for="roleSelect<?php echo (int)$user['id']; ?>">Role</label>
+                                    <select id="roleSelect<?php echo (int)$user['id']; ?>" class="role-select"
+                                            <?php echo $isSelf ? 'disabled title="You cannot change your own role"' : ''; ?>>
+                                        <option value="faculty" <?php echo $user['role'] === 'faculty' ? 'selected' : ''; ?>>Faculty</option>
+                                        <option value="planning_officer" <?php echo $user['role'] === 'planning_officer' ? 'selected' : ''; ?>>Admin</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="action-btn role-btn"
+                                        onclick="updateUserRole(<?php echo (int)$user['id']; ?>)"
+                                        <?php echo $isSelf ? 'disabled title="You cannot change your own role"' : ''; ?>>
+                                    <i class="material-icons">manage_accounts</i>
+                                    Update Role
+                                </button>
+                                <button type="button" class="action-btn password-btn"
+                                        onclick="openPasswordModal(<?php echo (int)$user['id']; ?>)"
+                                        <?php echo $isSelf ? 'disabled title="Use Account Settings to change your own password"' : ''; ?>>
+                                    <i class="material-icons">vpn_key</i>
+                                    Change Password
+                                </button>
                                 <button class="action-btn delete-btn" onclick="deleteUser(<?php echo (int)$user['id']; ?>)">
                                     <i class="material-icons">delete</i>
                                     Delete
@@ -812,6 +1011,51 @@ $conn->close();
         </div>
     </div>
 
+    <div id="passwordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+        <div class="modal-content password-modal-content">
+            <div class="modal-header">
+                <h2 id="passwordModalTitle">Change User Password</h2>
+                <span class="close" onclick="closePasswordModal()">&times;</span>
+            </div>
+            <p class="password-target" id="passwordTarget"></p>
+            <form id="changeUserPasswordForm" onsubmit="submitUserPassword(event)" novalidate>
+                <input type="hidden" id="passwordUserId" value="">
+
+                <label class="password-field-label" for="newUserPassword">New password</label>
+                <div class="password-field">
+                    <input type="password" id="newUserPassword" placeholder="At least 6 characters"
+                           autocomplete="new-password" oninput="clearPasswordFieldError('newUserPassword')">
+                    <button type="button" class="password-visibility" tabindex="-1"
+                            aria-label="Show new password"
+                            onclick="togglePasswordVisibility('newUserPassword', this)">
+                        <i class="material-icons">visibility</i>
+                    </button>
+                </div>
+                <div class="password-field-error" id="newUserPasswordError" role="alert"></div>
+
+                <label class="password-field-label" for="confirmUserPassword">Confirm new password</label>
+                <div class="password-field">
+                    <input type="password" id="confirmUserPassword" placeholder="Re-enter the new password"
+                           autocomplete="new-password" oninput="clearPasswordFieldError('confirmUserPassword')">
+                    <button type="button" class="password-visibility" tabindex="-1"
+                            aria-label="Show confirmed password"
+                            onclick="togglePasswordVisibility('confirmUserPassword', this)">
+                        <i class="material-icons">visibility</i>
+                    </button>
+                </div>
+                <div class="password-field-error" id="confirmUserPasswordError" role="alert"></div>
+
+                <div class="password-modal-actions">
+                    <button type="button" class="action-btn" onclick="closePasswordModal()">Cancel</button>
+                    <button type="submit" class="action-btn password-save-btn" id="saveUserPasswordBtn">
+                        <i class="material-icons">vpn_key</i>
+                        Save Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         window.userRoleFilter = 'all';
 
@@ -834,9 +1078,15 @@ $conn->close();
             let visible = 0;
 
             cards.forEach(card => {
+                // The Admin tab represents the planning_officer account type.
                 const roleMatches = window.userRoleFilter === 'all'
-                    || card.dataset.role === window.userRoleFilter;
-                const textMatches = card.textContent.toLowerCase().includes(searchTerm);
+                    || (window.userRoleFilter === 'admin'
+                        ? (card.dataset.role === 'planning_officer' || card.dataset.role === 'admin')
+                        : card.dataset.role === window.userRoleFilter);
+                // Search only the identity fields so the role dropdown options
+                // inside the card don't make every user match every role.
+                const searchableText = (card.dataset.search || card.textContent).toLowerCase();
+                const textMatches = searchableText.includes(searchTerm);
                 const matches = roleMatches && textMatches;
                 card.style.display = matches ? '' : 'none';
                 if (matches) visible++;
@@ -882,6 +1132,8 @@ $conn->close();
                 .then(data => {
                     if (data.success) {
                         const user = data.user;
+                        const roleLabels = { planning_officer: 'Admin', admin: 'Admin', faculty: 'Faculty' };
+                        const roleLabel = roleLabels[user.role] || user.role.replace('_', ' ');
                         content.innerHTML = `
                             <div class="user-detail">
                                 <label>User ID</label>
@@ -902,7 +1154,7 @@ $conn->close();
                             <div class="user-detail">
                                 <label>User Role</label>
                                 <div class="user-detail-value">
-                                    <span class="role-badge role-${user.role}">${user.role.replace('_', ' ').toUpperCase()}</span>
+                                    <span class="role-badge role-${user.role}">${roleLabel.toUpperCase()}</span>
                                 </div>
                             </div>
                         `;
@@ -925,6 +1177,280 @@ $conn->close();
                         </div>
                     `;
                 });
+        }
+
+        function updateUserRole(userId) {
+            const card = document.querySelector(`#userList .user-card[data-user-id="${userId}"]`);
+            if (!card) return;
+
+            const select = card.querySelector('.role-select');
+            const button = card.querySelector('.role-btn');
+            if (!select || !button || button.disabled) return;
+
+            const newRole = select.value;
+            const currentRole = card.dataset.role;
+            const roleLabels = { faculty: 'Faculty', planning_officer: 'Admin', admin: 'Admin' };
+
+            if (newRole === currentRole) {
+                showMessage('That user already has the ' + (roleLabels[newRole] || newRole) + ' role.', 'error');
+                return;
+            }
+
+            const userName = card.querySelector('.user-name')?.textContent.trim() || 'this user';
+            const currentLabel = roleLabels[currentRole] || currentRole;
+            const newLabel = roleLabels[newRole] || newRole;
+
+            showAppConfirm(
+                'Change ' + userName + "'s role from " + currentLabel + ' to ' + newLabel + '?',
+                'Update User Role?',
+                function () {
+                    const originalContent = button.innerHTML;
+                    button.innerHTML = '<div class="loading-spinner"></div> Updating...';
+                    button.disabled = true;
+                    select.disabled = true;
+
+                    fetch('/Prototype/PLANNING OFFICER/pages/user_management.php?action=update_role', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `action=update_role&id=${encodeURIComponent(userId)}&role=${encodeURIComponent(newRole)}`
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('HTTP error! status: ' + response.status);
+                        }
+                        return response.text().then(text => {
+                            try {
+                                return JSON.parse(text);
+                            } catch (e) {
+                                console.error('Response text:', text);
+                                throw new Error('Server returned non-JSON response. Check console for details.');
+                            }
+                        });
+                    })
+                    .then(data => {
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                        select.disabled = false;
+
+                        if (data.success) {
+                            applyUserRole(card, data.role || newRole);
+                            showMessage(data.message || 'User role updated successfully.', 'success');
+                            filterUsers();
+                        } else {
+                            select.value = currentRole;
+                            showMessage('Error updating role: ' + (data.error || 'Unknown error'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating user role:', error);
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                        select.disabled = false;
+                        select.value = currentRole;
+                        showMessage('Error updating role. Please try again.', 'error');
+                    });
+                },
+                null,
+                { type: 'confirm', okText: 'Update Role', cancelText: 'Cancel' }
+            );
+        }
+
+        function applyUserRole(card, role) {
+            if (!card) return;
+
+            const roleLabels = { faculty: 'Faculty', planning_officer: 'Admin', admin: 'Admin' };
+            const roleLabel = roleLabels[role] || role.replace(/_/g, ' ');
+
+            card.dataset.role = role;
+
+            const badge = card.querySelector('.status-badge');
+            if (badge) {
+                badge.classList.remove('role-faculty', 'role-planning_officer', 'role-admin');
+                badge.classList.add('role-' + role);
+                badge.textContent = roleLabel.toLowerCase();
+            }
+
+            const roleDetail = [...card.querySelectorAll('.detail-item')].find(item =>
+                item.querySelector('.detail-label')?.textContent.trim() === 'Role'
+            )?.querySelector('.detail-value');
+            if (roleDetail) {
+                roleDetail.textContent = roleLabel;
+            }
+
+            const select = card.querySelector('.role-select');
+            if (select) {
+                select.value = role;
+            }
+
+            // Keep search accurate after the role changes.
+            const name = card.querySelector('.user-name')?.textContent.trim() || '';
+            const email = [...card.querySelectorAll('.detail-item')].find(item =>
+                item.querySelector('.detail-label')?.textContent.trim() === 'Email'
+            )?.querySelector('.detail-value')?.textContent.trim() || '';
+            card.dataset.search = `${name} ${email} ${roleLabel}`.toLowerCase();
+        }
+
+        function openPasswordModal(userId) {
+            const card = document.querySelector(`#userList .user-card[data-user-id="${userId}"]`);
+            if (!card) return;
+
+            const trigger = card.querySelector('.password-btn');
+            if (trigger && trigger.disabled) return;
+
+            const modal = document.getElementById('passwordModal');
+            const form = document.getElementById('changeUserPasswordForm');
+            if (!modal || !form) return;
+
+            form.reset();
+            clearPasswordErrors();
+
+            const userName = card.querySelector('.user-name')?.textContent.trim() || 'this user';
+            const target = document.getElementById('passwordTarget');
+            if (target) {
+                target.textContent = 'Set a new password for ';
+                const strong = document.createElement('strong');
+                strong.textContent = userName;
+                target.appendChild(strong);
+                target.appendChild(document.createTextNode('.'));
+            }
+
+            document.getElementById('passwordUserId').value = userId;
+            modal.style.display = 'block';
+            setTimeout(() => document.getElementById('newUserPassword')?.focus(), 60);
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) modal.style.display = 'none';
+            const form = document.getElementById('changeUserPasswordForm');
+            if (form) form.reset();
+            clearPasswordErrors();
+        }
+
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+
+            const icon = button ? button.querySelector('.material-icons') : null;
+            if (icon) icon.textContent = show ? 'visibility_off' : 'visibility';
+            if (button) button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            input.focus();
+        }
+
+        function clearPasswordFieldError(inputId) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(inputId + 'Error');
+            if (input) input.classList.remove('is-invalid');
+            if (error) error.textContent = '';
+        }
+
+        function clearPasswordErrors() {
+            clearPasswordFieldError('newUserPassword');
+            clearPasswordFieldError('confirmUserPassword');
+        }
+
+        function setPasswordFieldError(inputId, message) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(inputId + 'Error');
+            if (input) input.classList.add('is-invalid');
+            if (error) error.textContent = message;
+        }
+
+        function submitUserPassword(event) {
+            event.preventDefault();
+
+            const userId = document.getElementById('passwordUserId').value;
+            const newPasswordInput = document.getElementById('newUserPassword');
+            const confirmPasswordInput = document.getElementById('confirmUserPassword');
+            const newPassword = newPasswordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+
+            clearPasswordErrors();
+
+            let firstInvalid = null;
+
+            if (!newPassword) {
+                setPasswordFieldError('newUserPassword', 'Enter a new password.');
+                firstInvalid = newPasswordInput;
+            } else if (newPassword.length < 6) {
+                setPasswordFieldError('newUserPassword', 'Use at least 6 characters.');
+                firstInvalid = newPasswordInput;
+            } else if (newPassword.length > 100) {
+                setPasswordFieldError('newUserPassword', 'Use 100 characters or fewer.');
+                firstInvalid = newPasswordInput;
+            }
+
+            if (!confirmPassword) {
+                setPasswordFieldError('confirmUserPassword', 'Re-enter the new password.');
+                firstInvalid = firstInvalid || confirmPasswordInput;
+            } else if (newPassword !== confirmPassword) {
+                setPasswordFieldError('confirmUserPassword', 'The passwords do not match.');
+                firstInvalid = firstInvalid || confirmPasswordInput;
+            }
+
+            if (firstInvalid) {
+                firstInvalid.focus();
+                return;
+            }
+
+            const button = document.getElementById('saveUserPasswordBtn');
+            const originalContent = button ? button.innerHTML : '';
+            if (button) {
+                button.innerHTML = '<div class="loading-spinner"></div> Saving...';
+                button.disabled = true;
+            }
+
+            fetch('/Prototype/PLANNING OFFICER/pages/user_management.php?action=update_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=update_password&id=${encodeURIComponent(userId)}&password=${encodeURIComponent(newPassword)}&confirm_password=${encodeURIComponent(confirmPassword)}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Response text:', text);
+                        throw new Error('Server returned non-JSON response. Check console for details.');
+                    }
+                });
+            })
+            .then(data => {
+                if (button) {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                }
+
+                if (data.success) {
+                    const card = document.querySelector(`#userList .user-card[data-user-id="${userId}"]`);
+                    const realPassword = card ? card.querySelector('.password-real') : null;
+                    if (realPassword) realPassword.textContent = newPassword;
+                    closePasswordModal();
+                    showMessage(data.message || 'Password updated successfully.', 'success');
+                } else {
+                    setPasswordFieldError('newUserPassword', data.error || 'Could not update the password.');
+                    newPasswordInput.focus();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating password:', error);
+                if (button) {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                }
+                setPasswordFieldError('newUserPassword', 'Could not update the password. Please try again.');
+                newPasswordInput.focus();
+            });
         }
 
         function deleteUser(userId) {
@@ -1078,7 +1604,12 @@ $conn->close();
             if (event.target == modal) {
                 closeModal();
             }
-        }
+
+            const passwordModal = document.getElementById('passwordModal');
+            if (event.target == passwordModal) {
+                closePasswordModal();
+            }
+        };
 
         (function() {
             const targetUserId = Number(window.notificationTargetUserId) || 0;

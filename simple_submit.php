@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'connect.php';
+require_once __DIR__ . '/activity_log.php';
 
 header('Content-Type: application/json');
 
@@ -10,7 +11,7 @@ $createTableSQL = "CREATE TABLE IF NOT EXISTS vehicle_requests (
     travel_date DATE NOT NULL,
     destination VARCHAR(255) NOT NULL,
     purpose TEXT NOT NULL,
-    passengers VARCHAR(50) NOT NULL,
+    passengers TEXT NOT NULL,
     requested_by VARCHAR(100) NOT NULL,
     attachment_name VARCHAR(255) NULL,
     attachment_data LONGBLOB NULL,
@@ -55,9 +56,31 @@ if ($parsedTravelDate && $parsedTravelDate->format('Y-m-d') === $travelDatePart)
     $travelDate = $parsedTravelDate->format('Y-m-d');
 }
 
-$destination = $_POST['destination'] ?? '';
-$purpose = $_POST['purpose'] ?? '';
-$passengers = $_POST['passengers'] ?? '';
+// A travel date in the past must never be stored, even if the browser-side
+// min attribute or validation is bypassed.
+if ($travelDate !== '' && $travelDate < date('Y-m-d')) {
+    echo json_encode(['error' => 'The date of travel cannot be in the past. Please select today or a future date.']);
+    exit;
+}
+
+// Normalize free-text destinations and purposes to Sentence Case so "TEST" and
+// "test" are stored as "Test" and stay consistent everywhere they are shown.
+function sentenceCaseText($text) {
+    $text = trim(preg_replace('/\s+/u', ' ', (string)$text));
+    if ($text === '') {
+        return '';
+    }
+    if (function_exists('mb_strtolower')) {
+        $lower = mb_strtolower($text, 'UTF-8');
+        return mb_strtoupper(mb_substr($lower, 0, 1, 'UTF-8'), 'UTF-8')
+             . mb_substr($lower, 1, null, 'UTF-8');
+    }
+    return ucfirst(strtolower($text));
+}
+
+$destination = sentenceCaseText($_POST['destination'] ?? '');
+$purpose = sentenceCaseText($_POST['purpose'] ?? '');
+$passengers = trim($_POST['passengers'] ?? '');
 $requestedBy = trim($_POST['requestedBy'] ?? '');
 
 // Debug: Log received data
@@ -72,13 +95,31 @@ if ($conn->connect_error) {
 // Validate required fields
 if (!$travelDate || !$destination || !$purpose || !$passengers || !$requestedBy) {
     $missing = [];
-    if (!$travelDate) $missing[] = 'travelDate (valid date required)';
-    if (!$destination) $missing[] = 'destination';
-    if (!$purpose) $missing[] = 'purpose';
-    if (!$passengers) $missing[] = 'passengers';
-    if (!$requestedBy) $missing[] = 'requestedBy';
-    
-    echo json_encode(['error' => 'Missing required fields: ' . implode(', ', $missing)]);
+    if (!$travelDate) $missing[] = 'Travel Date (a valid today or future date)';
+    if (!$destination) $missing[] = 'Destination';
+    if (!$purpose) $missing[] = 'Purpose';
+    if (!$passengers) $missing[] = 'Passengers Name';
+    if (!$requestedBy) $missing[] = 'Requested By';
+
+    echo json_encode([
+        'error' => 'Please complete the following fields: ' . implode(', ', $missing) . '.'
+    ]);
+    exit;
+}
+
+// The Authority to Travel photo is mandatory. Report a clear reason when it is
+// missing or when the upload itself failed.
+$attachmentError = $_FILES['attachment']['error'] ?? UPLOAD_ERR_NO_FILE;
+if ($attachmentError === UPLOAD_ERR_NO_FILE || !isset($_FILES['attachment'])) {
+    echo json_encode([
+        'error' => 'Attach a photo of the Authority to Travel (JPG, JPEG, PNG, or GIF) before submitting.'
+    ]);
+    exit;
+}
+if ($attachmentError !== UPLOAD_ERR_OK) {
+    echo json_encode([
+        'error' => 'The Authority to Travel file could not be uploaded. Check the file and try again.'
+    ]);
     exit;
 }
 
@@ -87,11 +128,13 @@ if (!$travelDate || !$destination || !$purpose || !$passengers || !$requestedBy)
 $attachmentName = '';
 $attachmentData = null;
 if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
-    $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'gif'];
+    $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
+    $allowedMime = ['image/jpeg', 'image/png', 'image/gif'];
     $fileExt = strtolower(pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION));
+    $fileMime = $_FILES['attachment']['type'] ?? '';
     
-    if (!in_array($fileExt, $allowedExt, true)) {
-        echo json_encode(['error' => 'Invalid file type. Only PDF, JPG, JPEG, PNG, GIF allowed.']);
+    if (!in_array($fileExt, $allowedExt, true) || ($fileMime && !in_array($fileMime, $allowedMime, true))) {
+        echo json_encode(['error' => 'Invalid file type. Only picture files (JPG, JPEG, PNG, GIF) are allowed.']);
         exit;
     }
     
@@ -184,6 +227,15 @@ $notifRole = 'planning_officer';
 $notifStmt->bind_param("sssssi", $title, $message, $notifType, $notifRole, $requestedBy, $insertId);
 $notifStmt->execute();
 $notifStmt->close();
+
+// Activity log for the Planning Officer.
+$ticketLabel = '#' . str_pad((string)$ticketNo, 3, '0', STR_PAD_LEFT) . ', ' . $ticketYear;
+log_activity(
+    $conn,
+    'vehicle_request_submitted',
+    "Submitted a vehicle request to {$destination} for {$travelDate} (Ticket {$ticketLabel}).",
+    ['target_type' => 'vehicle_requests', 'target_id' => $insertId]
+);
 
 echo json_encode([
     'success' => 'Request submitted successfully',

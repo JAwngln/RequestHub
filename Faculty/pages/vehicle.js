@@ -7,6 +7,19 @@ function vehicleNotify(message, title, type) {
     }
 }
 
+// Show the list of things the user must fix, both as a summary and under the
+// affected fields. Falls back to the styled modal on older shells.
+function reportVehicleErrors(errors) {
+    if (typeof window.showFormErrors === 'function') {
+        window.showFormErrors('vehicleForm', errors, {
+            heading: 'Please correct the following before submitting your vehicle request:'
+        });
+        return;
+    }
+
+    vehicleNotify(errors.map(function (item) { return item.message; }).join('\n'), 'Please Check the Form', 'warning');
+}
+
 // Normalize a date or datetime value to a calendar date (YYYY-MM-DD).
 function toDateOnly(value) {
     const raw = String(value || '').trim();
@@ -27,13 +40,17 @@ function todayLocalDate() {
 // Submit vehicle request function - clean version - v3
 window.submitVehicleRequest = async function() {
     console.log('Vehicle.js submitVehicleRequest called - v3');
+
+    if (typeof window.clearFormErrors === 'function') {
+        window.clearFormErrors('vehicleForm');
+    }
     
     // Get form values directly
     const travelDate = toDateOnly(document.getElementById('travelDate').value);
-    const destination = document.getElementById('destination').value;
-    const purpose = document.getElementById('purpose').value;
-    const passengers = document.getElementById('passengers').value;
-    const requestedBy = document.getElementById('requestedBy').value;
+    const destination = document.getElementById('destination').value.trim();
+    const purpose = document.getElementById('purpose').value.trim();
+    const passengers = document.getElementById('passengers').value.trim();
+    const requestedBy = document.getElementById('requestedBy').value.trim();
     
     console.log('Form values:', {
         travelDate,
@@ -43,23 +60,53 @@ window.submitVehicleRequest = async function() {
         requestedBy
     });
     
-    // Validate required fields
-    if (!travelDate || !destination || !purpose || !passengers || !requestedBy) {
-        let missingFields = [];
-        if (!travelDate) missingFields.push('Travel Date');
-        if (!destination) missingFields.push('Destination');
-        if (!purpose) missingFields.push('Purpose');
-        if (!passengers) missingFields.push('Passengers');
-        if (!requestedBy) missingFields.push('Requested By');
-        
-        vehicleNotify('Please fill in all required fields: ' + missingFields.join(', '), 'Missing Information', 'warning');
+    // Collect every problem at once so the user can fix the whole form in one
+    // pass instead of discovering one missing field at a time.
+    const errors = [];
+    if (!travelDate) {
+        errors.push({ field: 'travelDate', message: 'Select the date of travel.' });
+    } else if (travelDate < todayLocalDate()) {
+        errors.push({ field: 'travelDate', message: 'The date of travel cannot be in the past. Choose today or a future date.' });
+    }
+    if (!destination) {
+        errors.push({ field: 'destination', message: 'Enter where the vehicle is going (destination).' });
+    }
+    if (!purpose) {
+        errors.push({ field: 'purpose', message: 'Enter the purpose of the trip.' });
+    }
+    if (!passengers) {
+        errors.push({ field: 'passengers', message: 'Enter the name(s) of the passengers.' });
+    }
+    if (!requestedBy) {
+        errors.push({ field: 'requestedBy', message: 'Enter the name of the person requesting the vehicle.' });
+    }
+
+    if (errors.length > 0) {
+        reportVehicleErrors(errors);
         return;
     }
     
     // Validate attachment file
     const attachment = document.getElementById('attachment');
     if (!attachment || !attachment.files || attachment.files.length === 0) {
-        vehicleNotify('Please attach the Authority To Travel File before submitting.', 'Attachment Required', 'warning');
+        reportVehicleErrors([{
+            field: 'attachment',
+            message: 'Attach a photo of the Authority to Travel (JPG, JPEG, PNG, or GIF).'
+        }]);
+        return;
+    }
+
+    // Picture files only (JPG, JPEG, PNG, GIF)
+    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const allowedImageExts = ['jpg', 'jpeg', 'png', 'gif'];
+    const attachmentFile = attachment.files[0];
+    const attachmentExt = (attachmentFile.name.split('.').pop() || '').toLowerCase();
+    if (!allowedImageTypes.includes(attachmentFile.type) && !allowedImageExts.includes(attachmentExt)) {
+        attachment.value = '';
+        reportVehicleErrors([{
+            field: 'attachment',
+            message: 'Only picture files are accepted (JPG, JPEG, PNG, or GIF). Attach an image of the Authority to Travel.'
+        }]);
         return;
     }
     

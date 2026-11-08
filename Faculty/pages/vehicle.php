@@ -1,6 +1,6 @@
 <link href="/Prototype/assets/fonts/material-icons.css" rel="stylesheet">
     <link href="/Prototype/assets/fonts/poppins.css" rel="stylesheet">
-    <link rel="stylesheet" href="pages/vehiclebtn.css?v=5">
+    <link rel="stylesheet" href="pages/vehiclebtn.css?v=6">
 </head>
 <body>
 
@@ -18,7 +18,7 @@
       
       <div class="line-row">
         <label>Date of Travel:</label>
-        <input type="date" name="travelDate" class="line-input" id="travelDate" step="1" lang="en-US" placeholder="mm/dd/yyyy" required>
+        <input type="date" name="travelDate" class="line-input" id="travelDate" step="1" lang="en-US" placeholder="mm/dd/yyyy" min="<?php echo date('Y-m-d'); ?>" required>
       </div>
 
       <div class="line-row">
@@ -32,7 +32,7 @@
       </div>
 
       <div class="line-row">
-        <label>Passenger/s:</label>
+        <label>Passengers Name:</label>
         <input type="text" name="passengers" class="line-input" id="passengers" required>
       </div>
 
@@ -41,9 +41,12 @@
         <input type="text" name="requestedBy" class="line-input" id="requestedBy" required>
       </div>
 
-      <div class="line-row">
+      <div class="line-row attachment-row">
         <label>Attach File (Authority to Travel)</label>
-        <input type="file" name="attachment" id="attachment" accept="image/*,.pdf,.doc,.docx" capture="environment" required style="margin-top:5px;">
+        <input type="file" name="attachment" id="attachment" accept="image/jpeg,image/jpg,image/png,image/gif" capture="environment" required style="margin-top:5px;">
+        <small style="display:block; margin-top:4px; color:#b45309; font-size:12px;">
+          Reminder: Picture files only (JPG, JPEG, PNG, GIF). PDF and other document files are not accepted.
+        </small>
       </div>
 
             <div class="actions" style="text-align:center; margin-top:10px;">
@@ -117,7 +120,7 @@ window.displayRequests = async function() {
                             <p><strong>Destination:</strong> ${request.destination}</p>
                             <p><strong>Date of Travel:</strong> ${formatDate(request.travel_date || request.request_date)}</p>
                             <p><strong>Purpose:</strong> ${request.purpose}</p>
-                            <p><strong>Passengers:</strong> ${request.passengers}</p>
+                            <p><strong>Passengers Name:</strong> ${request.passengers}</p>
                             ${request.vehicle_plate ? `<p><strong>Assigned Vehicle:</strong> ${request.vehicle_plate}</p>` : ''}
                             <p><strong>Requested by:</strong> ${request.requested_by}</p>
                             ${request.attachment_name ? `<p><strong>Attachment:</strong> <button type="button" class="view-attachment-btn" data-request-id="${request.id}" data-filename="${request.attachment_name}">View Authority To Travel File</button></p>` : ''}

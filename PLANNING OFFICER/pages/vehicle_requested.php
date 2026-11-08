@@ -14,9 +14,15 @@ ensureFleetSchema($conn);
 $currentYear = (int)date('Y');
 $availableYears = getAvailableYears($conn, 'vehicle_requests', 'travel_date');
 
+// Default to the newest travel year that actually has data, not just the current
+// calendar year. Travel dates may fall in a future year (e.g. a 2027 trip booked
+// in 2026); defaulting to date('Y') would hide that request and only show the
+// older one, so the travel order form would appear to "show the wrong year".
+$defaultYear = $availableYears ? max($availableYears) : $currentYear;
+
 // Deep link used by the sidebar badge. The badge counts pending requests across all
-// years, but this page defaults to the current year, so without ?show=pending a badge
-// reading "1" would land on a list that looks empty. Opening the badge clears the
+// years, but this page defaults to a single year, so without ?show=pending a badge
+// reading "1" could land on a list that looks empty. Opening the badge clears the
 // year and month filters so every pending request is actually on screen.
 $showPendingAll = (isset($_GET['show']) && $_GET['show'] === 'pending');
 
@@ -1525,7 +1531,7 @@ h2 {
                 <span class="filter-label">Year</span>
                 <select id="yearFilter" class="time-select">
                     <?php foreach ($availableYears as $y): ?>
-                        <option value="<?php echo $y; ?>" <?php echo $y === $currentYear ? 'selected' : ''; ?>><?php echo $y; ?></option>
+                        <option value="<?php echo $y; ?>" <?php echo $y === $defaultYear ? 'selected' : ''; ?>><?php echo $y; ?></option>
                     <?php endforeach; ?>
                     <option value="">All Years</option>
                 </select>
@@ -1931,7 +1937,7 @@ h2 {
     // Use window properties (not let/const) so re-execution of this inline script doesn't throw a redeclaration error
     window.currentStatusFilter = <?php echo $showPendingAll ? "'pending'" : "'all'"; ?>;
     window.currentTimeFilter = { month: '', year: '' };
-    window.currentRequestYear = <?php echo $currentYear; ?>;
+    window.currentRequestYear = <?php echo $defaultYear; ?>;
     window.showPendingAll = <?php echo $showPendingAll ? 'true' : 'false'; ?>;
 
     // Trip Ticket is the per-travel-year sequence, zero-padded (001, 002 ...).
@@ -1946,9 +1952,9 @@ h2 {
         return String(row.ticket_no).padStart(3, '0');
     };
 
-    // The list defaults to the current calendar year, so a new year starts with a
-    // clean list while past years stay one dropdown away. Years come from the
-    // server (data-derived) rather than a hardcoded range.
+    // The list defaults to the newest travel year that has data, so future-dated
+    // requests are visible while older years stay one dropdown away. Years come
+    // from the server (data-derived) rather than a hardcoded range.
     function initializeYearFilter() {
         const yearFilter = document.getElementById('yearFilter');
         if (!yearFilter) return;
@@ -2081,7 +2087,7 @@ h2 {
         renderFiltered();
     }
 
-    // Clear time filter (overrides global version) - returns to the current-year default
+    // Clear time filter (overrides global version) - returns to the newest-year default
     function clearTimeFilter() {
         const monthFilter = document.getElementById('monthFilter');
         const yearFilter = document.getElementById('yearFilter');

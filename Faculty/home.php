@@ -24,7 +24,10 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
     <title>FACULTY Dashboard</title>
 
     <link rel="stylesheet" href="home.css?v=2">
+    <link rel="stylesheet" href="/Prototype/assets/css/theme.css">
+    <link rel="stylesheet" href="/Prototype/assets/css/form-validation.css">
     <link href="/Prototype/assets/fonts/material-icons.css" rel="stylesheet">
+    <script src="/Prototype/assets/js/theme.js"></script>
     <style>
         html, body {
             overflow: hidden;
@@ -634,6 +637,11 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
     </div>
 
     <div class="top-right" onclick="toggleNotif()">
+        <button type="button" class="theme-toggle" onclick="event.stopPropagation(); toggleTheme();"
+                aria-label="Switch to dark mode" title="Switch to dark mode">
+            <span class="material-icons theme-toggle-icon">dark_mode</span>
+            <span class="theme-toggle-text">Dark</span>
+        </button>
         <span>NOTIFICATIONS</span>  
         <span class="material-icons bell">notifications</span>
         <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
@@ -687,13 +695,6 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
                 </button>
             </div>
 
-            <div class="nav-item">
-                <button type="button" class="nav-link" data-page="pages/account_settings.php"
-                        onclick="loadPage('pages/account_settings.php')">
-                    <span class="material-icons nav-icon">settings</span>
-                    <span class="nav-text">Account Settings</span>
-                </button>
-            </div>
         </nav>
 
         <div class="sidebar-footer">
@@ -741,7 +742,7 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
                     notificationList.replaceChildren();
                     
                     data.notifications.forEach(notif => {
-                        const isNew = Date.parse(notif.created_at) > lastNotificationCheck;
+                        const isNew = Date.parse(notif.created_at_iso || notif.created_at) > lastNotificationCheck;
                         const isUnread = Number(notif.is_read) === 0;
                         if (isNew && isUnread) newCount++;
 
@@ -757,7 +758,8 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
                         const message = document.createElement('p');
                         message.textContent = notif.message || '';
                         const time = document.createElement('small');
-                        time.textContent = formatNotificationTime(notif.created_at);
+                        time.dataset.createdAt = notif.created_at_iso || notif.created_at || '';
+                        time.textContent = formatNotificationTime(time.dataset.createdAt);
                         content.append(title, message, time);
                         item.appendChild(content);
                         if (isUnread) {
@@ -807,7 +809,9 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
 
         // Format notification time
         function formatNotificationTime(dateString) {
+            if (!dateString) return '';
             const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
             const now = new Date();
             const diffMs = now - date;
             const diffMins = Math.floor(diffMs / 60000);
@@ -816,6 +820,13 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
             if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
             if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hour${Math.floor(diffMins / 60) > 1 ? 's' : ''} ago`;
             return date.toLocaleDateString();
+        }
+
+        // Keep the "x ago" labels current without waiting for the next poll.
+        function refreshNotificationTimes() {
+            document.querySelectorAll('#notificationList .notification-content small[data-created-at]').forEach(el => {
+                el.textContent = formatNotificationTime(el.dataset.createdAt);
+            });
         }
 
         // Route a notification to the page that owns the referenced record.
@@ -858,8 +869,6 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
             switch (target.type) {
                 case 'item_request':
                     return `pages/request.php${suffix}`;
-                case 'account_update':
-                    return 'pages/account_settings.php';
                 case 'vehicle_request':
                 default:
                     return `pages/vehicle.php${suffix}`;
@@ -978,11 +987,23 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
                 
                 if (result.success) {
                     // Clear the notification list
-                    document.getElementById('notificationList').innerHTML = '<p>No new notifications</p>';
+                    const notificationList = document.getElementById('notificationList');
+                    if (notificationList) {
+                        notificationList.innerHTML = '<p>No new notifications</p>';
+                    }
                     // Hide the badge
-                    document.getElementById('notificationBadge').style.display = 'none';
-                    // Reset last check time
+                    const badge = document.getElementById('notificationBadge');
+                    if (badge) {
+                        badge.style.display = 'none';
+                    }
+                    // Reset local counters
+                    notificationCount = 0;
                     lastNotificationCheck = Date.now();
+                    // Close the notification dropdown after clearing
+                    const notifBox = document.getElementById('notifBox');
+                    if (notifBox) {
+                        notifBox.style.display = 'none';
+                    }
                 } else {
                     console.error('Failed to clear notifications:', result.error);
                 }
@@ -1006,8 +1027,10 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
             // Load notifications immediately
             loadNotifications();
             
-            // Then poll every 30 seconds
-            setInterval(loadNotifications, 30000);
+            // Poll often so new notifications arrive close to realtime
+            setInterval(loadNotifications, 5000);
+            // Keep the "x ago" labels accurate between polls
+            setInterval(refreshNotificationTimes, 10000);
         }
 
         // Calendar navigation functions for AJAX-loaded calendar
@@ -1060,6 +1083,7 @@ if (trim($_SESSION['role'] ?? '') !== 'faculty') {
 
 </div>
 
+<script src="/Prototype/assets/js/form-validation.js"></script>
 <script src="database_requests.js"></script>
 <script src="shared_requests.js"></script>
 <script src="main.js?v=3"></script>

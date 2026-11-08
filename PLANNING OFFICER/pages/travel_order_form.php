@@ -207,6 +207,11 @@ $conn->close();
 
             .dispatch-print-value {
                 display: inline-block !important;
+                /* Match the on-screen select width so the printed Vehicle/Driver
+                   line stays the same length instead of stretching across the row. */
+                flex: 0 0 150px;
+                width: 150px;
+                box-sizing: border-box;
             }
 
             /* Hide dropdown arrows when printing */
@@ -385,7 +390,7 @@ $conn->close();
                 <div class="flex-row">Place: <div class="underline"></div></div>
                 <div class="flex-row">Time: <div class="underline"></div></div>
                 <div class="sig-block" style="width:100%; margin-top:10px;">
-                    <div class="name-line"><strong>JOEL C. CREDITO</strong></div>
+                    <div class="name-line"><strong>MR. BUGGIE JOHN B. CATURAY</strong></div>
                     <div>Head, PPSS</div>
                 </div>
             </div>

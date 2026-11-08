@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `vehicle_requests` (
     `travel_date` DATE NOT NULL,
     `destination` VARCHAR(255) NOT NULL,
     `purpose` TEXT NOT NULL,
-    `passengers` VARCHAR(50) NOT NULL,
+    `passengers` TEXT NOT NULL,
     `driver` VARCHAR(100) NULL DEFAULT NULL,
     `requested_by` VARCHAR(100) NOT NULL,
     `user_email` VARCHAR(255) NULL,
@@ -74,6 +74,30 @@ CREATE TABLE IF NOT EXISTS `badge_seen` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `section` VARCHAR(50) NOT NULL UNIQUE,
     `seen_at` DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `notification_dismissals` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_email` VARCHAR(255) NOT NULL,
+    `notification_id` INT NOT NULL,
+    `dismissed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uniq_user_notification` (`user_email`, `notification_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `activity_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NULL DEFAULT NULL,
+    `user_email` VARCHAR(100) NOT NULL,
+    `user_name` VARCHAR(150) NOT NULL,
+    `role` VARCHAR(30) NOT NULL DEFAULT 'faculty',
+    `action` VARCHAR(50) NOT NULL,
+    `description` VARCHAR(500) NOT NULL,
+    `target_type` VARCHAR(50) NULL DEFAULT NULL,
+    `target_id` INT NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_activity_created` (`created_at`),
+    INDEX `idx_activity_user` (`user_email`),
+    INDEX `idx_activity_action` (`action`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `calendar_events` (

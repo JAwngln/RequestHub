@@ -39,16 +39,24 @@ if (isset($_POST['signIn'])) {
             $_SESSION['firstName'] = $row['firstName'];
             $_SESSION['lastName'] = $row['lastName'];
             $_SESSION['role'] = $row['role'];
+            $_SESSION['userId'] = (int)$row['Id'];
 
             // Set flag for custom modal
             $userRole = trim($row['role']);
             $loginSuccess = true;
             $loginRedirect = ($userRole === 'faculty') ? '../Faculty/home.php' : (($userRole === 'planning_officer') ? '../PLANNING OFFICER/home.php' : 'login.php');
+
+            // Record faculty sign-ins so the Planning Officer can see who has
+            // been using the system. Officer activity is intentionally not logged.
+            if ($userRole === 'faculty') {
+                require_once __DIR__ . '/../activity_log.php';
+                log_activity($conn, 'login', 'Signed in to the system.');
+            }
         } else {
-            $error = "Invalid password";
+            $error = "Incorrect password. Check your password and try again.";
         }
     } else {
-        $error = "User not found";
+        $error = "No account uses that email address. Check the email or create an account.";
     }
 }
 ?>
@@ -63,8 +71,16 @@ if (isset($_POST['signIn'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CVSU Transportation System</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/Prototype/assets/css/theme.css">
+    <script src="/Prototype/assets/js/theme.js"></script>
 </head>
-<body>
+<body class="auth-theme-scope">
+
+<button type="button" class="theme-toggle auth-theme-toggle" onclick="toggleTheme();"
+        aria-label="Switch to dark mode" title="Switch to dark mode">
+    <span class="material-icons theme-toggle-icon">dark_mode</span>
+    <span class="theme-toggle-text">Dark</span>
+</button>
 
 <?php include __DIR__ . '/../Faculty/includes/custom_alert_modal.php'; ?>
 

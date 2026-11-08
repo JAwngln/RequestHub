@@ -741,12 +741,26 @@ $fleetJson = json_encode(
         }
 
         .fleet-dialog-head {
+            position: relative;
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
             gap: 16px;
             padding: 18px 22px 14px;
             border-bottom: 1px solid var(--fleet-border);
+        }
+
+        .fleet-dialog-head > div {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+            padding: 0 32px;
+        }
+
+        .fleet-dialog-head .fleet-icon-btn {
+            position: absolute;
+            top: 12px;
+            right: 14px;
         }
 
         .fleet-dialog-head h2 {
@@ -938,6 +952,20 @@ $fleetJson = json_encode(
             color: #b42318;
             font-size: 12px;
             line-height: 1.5;
+        }
+
+        .fleet-form-error strong {
+            display: block;
+            font-weight: 700;
+        }
+
+        .fleet-form-error ul {
+            margin: 4px 0 0;
+            padding-left: 18px;
+        }
+
+        .fleet-form-error li {
+            margin: 1px 0;
         }
 
         .fleet-assign-summary {
@@ -1269,7 +1297,7 @@ $fleetJson = json_encode(
                             </div>
                             <div class="fleet-field">
                                 <label for="fleetVehicleType">Vehicle type *</label>
-                                <select id="fleetVehicleType">
+                                <select id="fleetVehicleType" onchange="syncFleetVehicleTypeOther()">
                                     <option value="">Select type</option>
                                     <option value="sedan">Sedan</option>
                                     <option value="suv">SUV</option>
@@ -1277,7 +1305,12 @@ $fleetJson = json_encode(
                                     <option value="truck">Truck</option>
                                     <option value="motorcycle">Motorcycle</option>
                                     <option value="bus">Bus</option>
+                                    <option value="others">Others</option>
                                 </select>
+                            </div>
+                            <div class="fleet-field" id="fleetVehicleTypeOtherWrap" hidden>
+                                <label for="fleetVehicleTypeOther">Specify vehicle type *</label>
+                                <input type="text" id="fleetVehicleTypeOther" maxlength="50" placeholder="e.g., Jeepney, Multicab" autocomplete="off">
                             </div>
                             <div class="fleet-field">
                                 <label for="fleetModel">Model / name</label>
@@ -1341,15 +1374,15 @@ $fleetJson = json_encode(
                         <div class="fleet-form-grid" id="fleetNewDriverWrap" hidden>
                             <div class="fleet-field">
                                 <label for="fleetDriverName">Full name *</label>
-                                <input type="text" id="fleetDriverName" placeholder="e.g., Juan D. Dela Cruz" autocomplete="off">
+                                <input type="text" id="fleetDriverName" placeholder="e.g., Juan D. Dela Cruz" autocomplete="off" oninput="fleetNameInput(this)">
                             </div>
                             <div class="fleet-field">
                                 <label for="fleetDriverLicense">License number *</label>
-                                <input type="text" id="fleetDriverLicense" placeholder="e.g., N01-23-456789" autocomplete="off">
+                                <input type="text" id="fleetDriverLicense" maxlength="13" placeholder="e.g., N01-23-456789" autocomplete="off" oninput="fleetLicenseInput(this)">
                             </div>
                             <div class="fleet-field fleet-field-full">
                                 <label for="fleetDriverContact">Contact number</label>
-                                <input type="text" id="fleetDriverContact" placeholder="e.g., 0917 000 0000" autocomplete="off">
+                                <input type="text" id="fleetDriverContact" maxlength="13" inputmode="numeric" placeholder="e.g., 0917 000 0000" autocomplete="off" oninput="fleetContactInput(this)">
                             </div>
                         </div>
                     </section>
@@ -1383,15 +1416,15 @@ $fleetJson = json_encode(
                     <div class="fleet-form-grid">
                         <div class="fleet-field fleet-field-full">
                             <label for="driverFormName">Full name *</label>
-                            <input type="text" id="driverFormName" placeholder="e.g., Juan D. Dela Cruz" autocomplete="off">
+                            <input type="text" id="driverFormName" placeholder="e.g., Juan D. Dela Cruz" autocomplete="off" oninput="fleetNameInput(this)">
                         </div>
                         <div class="fleet-field fleet-field-full">
                             <label for="driverFormLicense">License number *</label>
-                            <input type="text" id="driverFormLicense" placeholder="e.g., N01-23-456789" autocomplete="off">
+                            <input type="text" id="driverFormLicense" maxlength="13" placeholder="e.g., N01-23-456789" autocomplete="off" oninput="fleetLicenseInput(this)">
                         </div>
                         <div class="fleet-field fleet-field-full">
                             <label for="driverFormContact">Contact number</label>
-                            <input type="text" id="driverFormContact" placeholder="e.g., 0917 000 0000" autocomplete="off">
+                            <input type="text" id="driverFormContact" maxlength="13" inputmode="numeric" placeholder="e.g., 0917 000 0000" autocomplete="off" oninput="fleetContactInput(this)">
                         </div>
                         <div class="fleet-field fleet-field-full">
                             <label for="driverFormStatus">Status</label>
@@ -1527,6 +1560,42 @@ $fleetJson = json_encode(
             if (typeof field.focus === 'function') field.focus();
         }
 
+        // Report every problem in the dialog at once, mark each affected field,
+        // and move focus to the first one. This lets the user fix the whole
+        // form in a single pass instead of discovering one issue at a time.
+        function showFleetErrors(boxId, entries) {
+            clearInvalid();
+
+            var firstInvalid = null;
+            entries.forEach(function (entry) {
+                if (!entry.field) return;
+                var field = document.getElementById(entry.field);
+                if (!field) return;
+                field.classList.add('is-invalid');
+                if (!firstInvalid) firstInvalid = field;
+            });
+
+            var box = document.getElementById(boxId);
+            if (box) {
+                box.replaceChildren();
+                var title = document.createElement('strong');
+                title.textContent = 'Please correct the following:';
+                box.appendChild(title);
+                var list = document.createElement('ul');
+                entries.forEach(function (entry) {
+                    var li = document.createElement('li');
+                    li.textContent = entry.message;
+                    list.appendChild(li);
+                });
+                box.appendChild(list);
+                box.hidden = false;
+            }
+
+            if (firstInvalid && typeof firstInvalid.focus === 'function') {
+                firstInvalid.focus();
+            }
+        }
+
         function openDialog(id) {
             var dialog = document.getElementById(id);
             if (!dialog) return;
@@ -1607,7 +1676,68 @@ $fleetJson = json_encode(
             if (fresh) fresh.hidden = mode !== 'new';
         }
 
+        /* ---------------- Driver field formatting / validation ---------------- */
+
+        // Names may contain letters, spaces, periods, hyphens, apostrophes - no digits.
+        function fleetNameInput(input) {
+            if (!input) return;
+            var cleaned = input.value.replace(/[0-9]/g, '');
+            if (cleaned !== input.value) input.value = cleaned;
+        }
+
+        // Philippine driver's license: letter + 2 digits - 2 digits - 6 digits.
+        function formatFleetLicense(value) {
+            var raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (raw !== '' && !/[A-Z]/.test(raw.charAt(0))) {
+                raw = raw.replace(/^[0-9]+/, '');
+            }
+            if (raw === '') return '';
+            var letter = raw.charAt(0);
+            var digits = raw.slice(1).replace(/[^0-9]/g, '').slice(0, 10);
+            var out = letter;
+            if (digits.length > 0) out += digits.slice(0, 2);
+            if (digits.length > 2) out += '-' + digits.slice(2, 4);
+            if (digits.length > 4) out += '-' + digits.slice(4, 10);
+            return out;
+        }
+
+        function fleetLicenseInput(input) {
+            if (!input) return;
+            var formatted = formatFleetLicense(input.value);
+            if (formatted !== input.value) input.value = formatted;
+        }
+
+        function isValidFleetLicense(value) {
+            return /^[A-Z]\d{2}-\d{2}-\d{6}$/.test(formatFleetLicense(value));
+        }
+
+        // Mobile number: 11 digits starting with 09, shown as 0917 000 0000.
+        function formatFleetContact(value) {
+            var digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+            if (digits.length <= 4) return digits;
+            if (digits.length <= 7) return digits.slice(0, 4) + ' ' + digits.slice(4);
+            return digits.slice(0, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7);
+        }
+
+        function fleetContactInput(input) {
+            if (!input) return;
+            var formatted = formatFleetContact(input.value);
+            if (formatted !== input.value) input.value = formatted;
+        }
+
+        function isValidFleetContact(value) {
+            var digits = String(value || '').replace(/\D/g, '');
+            return digits === '' || /^09\d{9}$/.test(digits);
+        }
+
         /* ---------------- Add / edit vehicle ---------------- */
+
+        function syncFleetVehicleTypeOther() {
+            var select = document.getElementById('fleetVehicleType');
+            var wrap = document.getElementById('fleetVehicleTypeOtherWrap');
+            if (!select || !wrap) return;
+            wrap.hidden = select.value !== 'others';
+        }
 
         function openFleetVehicleModal(vehicleId) {
             readFleetData();
@@ -1623,7 +1753,25 @@ $fleetJson = json_encode(
             if (submit) submit.textContent = vehicle ? 'Save changes' : 'Add vehicle';
 
             document.getElementById('fleetPlate').value = vehicle ? vehicle.plate_number : '';
-            document.getElementById('fleetVehicleType').value = vehicle ? vehicle.vehicle_type : '';
+            var typeSelect = document.getElementById('fleetVehicleType');
+            var typeOther = document.getElementById('fleetVehicleTypeOther');
+            var vehicleType = vehicle ? String(vehicle.vehicle_type || '') : '';
+            var matchedType = '';
+            for (var i = 0; i < typeSelect.options.length; i++) {
+                var optValue = typeSelect.options[i].value;
+                if (optValue && optValue !== 'others' && optValue.toLowerCase() === vehicleType.toLowerCase()) {
+                    matchedType = optValue;
+                    break;
+                }
+            }
+            if (vehicleType && !matchedType) {
+                typeSelect.value = 'others';
+                if (typeOther) typeOther.value = vehicleType;
+            } else {
+                typeSelect.value = matchedType;
+                if (typeOther) typeOther.value = '';
+            }
+            syncFleetVehicleTypeOther();
             document.getElementById('fleetModel').value = vehicle ? (vehicle.model || vehicle.vehicle_name || '') : '';
             document.getElementById('fleetCapacity').value = vehicle ? String(vehicle.capacity || '') : '';
             document.getElementById('fleetYear').value = vehicle && vehicle.year_manufactured ? String(vehicle.year_manufactured) : '';
@@ -1651,7 +1799,12 @@ $fleetJson = json_encode(
             clearError('fleetVehicleError');
 
             var plate = document.getElementById('fleetPlate').value.trim();
-            var type = document.getElementById('fleetVehicleType').value;
+            var typeSelect = document.getElementById('fleetVehicleType');
+            var type = typeSelect.value;
+            var typeOtherInput = document.getElementById('fleetVehicleTypeOther');
+            if (type === 'others') {
+                type = typeOtherInput ? typeOtherInput.value.trim() : '';
+            }
             var capacity = document.getElementById('fleetCapacity').value;
             var model = document.getElementById('fleetModel').value.trim();
             var year = document.getElementById('fleetYear').value;
@@ -1660,20 +1813,18 @@ $fleetJson = json_encode(
             var modeEl = document.querySelector('input[name="fleetDriverMode"]:checked');
             var driverMode = modeEl ? modeEl.value : 'none';
 
+            var errors = [];
             if (!plate) {
-                markInvalid('fleetPlate');
-                showError('fleetVehicleError', 'Plate number is required.');
-                return;
+                errors.push({ field: 'fleetPlate', message: 'Enter the plate number.' });
             }
             if (!type) {
-                markInvalid('fleetVehicleType');
-                showError('fleetVehicleError', 'Vehicle type is required.');
-                return;
+                errors.push({
+                    field: typeSelect.value === 'others' ? 'fleetVehicleTypeOther' : 'fleetVehicleType',
+                    message: typeSelect.value === 'others' ? 'Specify the vehicle type.' : 'Select the vehicle type.'
+                });
             }
             if (!capacity || Number(capacity) < 1) {
-                markInvalid('fleetCapacity');
-                showError('fleetVehicleError', 'Capacity must be at least 1 passenger.');
-                return;
+                errors.push({ field: 'fleetCapacity', message: 'Enter a capacity of at least 1 passenger.' });
             }
 
             var params = {
@@ -1692,27 +1843,35 @@ $fleetJson = json_encode(
             if (driverMode === 'existing') {
                 var driverId = document.getElementById('fleetDriverSelect').value;
                 if (!driverId) {
-                    markInvalid('fleetDriverSelect');
-                    showError('fleetVehicleError', 'Select a driver or switch to "No driver".');
-                    return;
+                    errors.push({ field: 'fleetDriverSelect', message: 'Select a driver, or choose "No driver".' });
+                } else {
+                    params.driver_id = driverId;
                 }
-                params.driver_id = driverId;
             } else if (driverMode === 'new') {
                 var newName = document.getElementById('fleetDriverName').value.trim();
-                var newLicense = document.getElementById('fleetDriverLicense').value.trim();
+                var newLicense = formatFleetLicense(document.getElementById('fleetDriverLicense').value);
+                var newContact = formatFleetContact(document.getElementById('fleetDriverContact').value);
                 if (!newName) {
-                    markInvalid('fleetDriverName');
-                    showError('fleetVehicleError', 'Driver name is required.');
-                    return;
+                    errors.push({ field: 'fleetDriverName', message: "Enter the new driver's full name." });
+                } else if (/\d/.test(newName)) {
+                    errors.push({ field: 'fleetDriverName', message: 'Remove the numbers from the driver name.' });
                 }
                 if (!newLicense) {
-                    markInvalid('fleetDriverLicense');
-                    showError('fleetVehicleError', 'Driver license number is required.');
-                    return;
+                    errors.push({ field: 'fleetDriverLicense', message: "Enter the driver's license number." });
+                } else if (!isValidFleetLicense(newLicense)) {
+                    errors.push({ field: 'fleetDriverLicense', message: 'Use the license format N01-23-456789 (a letter followed by 10 digits).' });
+                }
+                if (!isValidFleetContact(newContact)) {
+                    errors.push({ field: 'fleetDriverContact', message: 'Enter an 11-digit mobile number starting with 09 (for example, 0917 000 0000).' });
                 }
                 params.driver_full_name = newName;
                 params.driver_license = newLicense;
-                params.driver_contact = document.getElementById('fleetDriverContact').value.trim();
+                params.driver_contact = newContact;
+            }
+
+            if (errors.length > 0) {
+                showFleetErrors('fleetVehicleError', errors);
+                return;
             }
 
             var submit = document.getElementById('fleetVehicleSubmit');
@@ -1786,18 +1945,27 @@ $fleetJson = json_encode(
             clearError('fleetDriverError');
 
             var name = document.getElementById('driverFormName').value.trim();
-            var license = document.getElementById('driverFormLicense').value.trim();
-            var contact = document.getElementById('driverFormContact').value.trim();
+            var license = formatFleetLicense(document.getElementById('driverFormLicense').value);
+            var contact = formatFleetContact(document.getElementById('driverFormContact').value);
             var status = document.getElementById('driverFormStatus').value;
 
+            var errors = [];
             if (!name) {
-                markInvalid('driverFormName');
-                showError('fleetDriverError', 'Driver name is required.');
-                return;
+                errors.push({ field: 'driverFormName', message: "Enter the driver's full name." });
+            } else if (/\d/.test(name)) {
+                errors.push({ field: 'driverFormName', message: 'Remove the numbers from the driver name.' });
             }
             if (!license) {
-                markInvalid('driverFormLicense');
-                showError('fleetDriverError', 'Driver license number is required.');
+                errors.push({ field: 'driverFormLicense', message: "Enter the driver's license number." });
+            } else if (!isValidFleetLicense(license)) {
+                errors.push({ field: 'driverFormLicense', message: 'Use the license format N01-23-456789 (a letter followed by 10 digits).' });
+            }
+            if (!isValidFleetContact(contact)) {
+                errors.push({ field: 'driverFormContact', message: 'Enter an 11-digit mobile number starting with 09 (for example, 0917 000 0000).' });
+            }
+
+            if (errors.length > 0) {
+                showFleetErrors('fleetDriverError', errors);
                 return;
             }
 
@@ -2158,6 +2326,10 @@ $fleetJson = json_encode(
         window.openFleetAssignModal = openFleetAssignModal;
         window.closeFleetDialog = closeDialog;
         window.syncFleetDriverMode = syncFleetDriverMode;
+        window.syncFleetVehicleTypeOther = syncFleetVehicleTypeOther;
+        window.fleetNameInput = fleetNameInput;
+        window.fleetLicenseInput = fleetLicenseInput;
+        window.fleetContactInput = fleetContactInput;
         window.submitFleetVehicle = submitFleetVehicle;
         window.submitFleetDriver = submitFleetDriver;
         window.submitFleetAssign = submitFleetAssign;

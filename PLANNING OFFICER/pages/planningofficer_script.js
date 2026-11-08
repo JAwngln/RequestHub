@@ -21,24 +21,23 @@ function toggleNotif() {
 
 // Clear all notifications
 function clearNotifications() {
-    // Hide notification badge
+    // Delegate to the server-backed clear so cleared notifications stay gone
+    // after a refresh instead of only being hidden in the current page.
+    if (typeof clearAllNotifications === 'function') {
+        clearAllNotifications();
+        return;
+    }
+
+    // Fallback for older shells: hide the badge and close the notification box.
     const badge = document.querySelector('.notification-badge');
     if (badge) {
         badge.style.display = 'none';
     }
-    
-    // Clear notification box
+
     const notifBox = document.getElementById('notifBox');
     if (notifBox) {
-        notifBox.innerHTML = '<p>No new notifications</p>';
+        notifBox.style.display = 'none';
     }
-    
-    // Close notification box after clearing
-    setTimeout(() => {
-        if (notifBox) {
-            notifBox.style.display = 'none';
-        }
-    }, 1000);
 }
 
 // Close notification box when clicking outside
